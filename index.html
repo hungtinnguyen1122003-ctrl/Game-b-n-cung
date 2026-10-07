@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đại Chiến Bắn Cung Chibi - Free For All Multiplayer</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- PeerJS qua CDN theo yêu cầu (kèm dự phòng file cục bộ) -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script>
+    if (typeof Peer === 'undefined') {
+      document.write('<script src="peerjs.min.js"><\/script>');
+    }
+  </script>
+</head>
+<body>
+  <div id="game-container">
+    <!-- Canvas Trận đấu -->
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+    <!-- HUD trong trận chiến Free For All -->
+    <div id="combat-hud" class="overlay-screen hidden">
+      <!-- Top Bar: Thông số tất cả người chơi và Sức gió -->
+      <div class="hud-top">
+        <!-- Danh sách HUD của tối đa 5 người chơi trong trận hỗn chiến -->
+        <div id="ffa-huds-wrapper" class="ffa-huds-wrapper">
+          <!-- Tự động sinh thẻ máu và trạng thái của từng người chơi -->
+        </div>
+
+        <!-- Trung tâm: Sức gió & Nút chức năng -->
+        <div class="center-hud">
+          <div class="wind-widget">
+            <div class="wind-label">SỨC GIÓ (WIND)</div>
+            <div class="wind-compass">
+              <div class="wind-arrow" id="wind-arrow">➔</div>
+              <span class="wind-val" id="wind-val">0.0 m/s</span>
+            </div>
+          </div>
+          <div class="hud-buttons-row">
+            <button id="btn-sound-toggle" class="btn-icon" title="Bật/Tắt âm thanh">🔊</button>
+            <button id="btn-back-lobby" class="btn-icon btn-danger" title="Về sảnh">🏳️ Về Sảnh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hướng dẫn điều khiển mini ghim dưới màn hình -->
+      <div class="hud-bottom-controls">
+        <div class="ctrl-box">
+          <strong>Điều Khiển:</strong> [A / D] Di chuyển (Tự động lật mặt) | <strong>[W] Nhảy (x2 Nhảy kép)</strong> | [S] Cúi né | <strong>[← / →] Mũi tên Trái / Phải Chỉnh góc ngắm</strong> | <strong>Giữ [SPACE] Tụ lực & Bắn</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- MÀN HÌNH PHÒNG CHỜ (LOBBY & INVENTORY) -->
+    <div id="lobby-screen" class="overlay-screen active">
+      <div class="lobby-backdrop"></div>
+      <div class="lobby-content">
+        <header class="lobby-header">
+          <h1 class="game-title">🏹 ĐẠI CHIẾN BẮN CUNG CHIBI 🎯</h1>
+          <p class="game-subtitle">Hỗn Chiến Đấu Mạng Free-For-All (Tối Đa 5 Người) • WebRTC P2P (PeerJS) • Bản Đồ Đa Tầng</p>
+        </header>
+
+        <!-- 1. KHU VỰC KẾT NỐI PHÒNG (ROOM CONNECTION) -->
+        <div class="room-connection-wrapper">
+          <!-- Khi chưa vào phòng -->
+          <div class="room-action-grid" id="room-connect-options">
+            <div class="room-action-card host-card">
+              <div class="card-tag">👑 MÁY CHỦ (HOST)</div>
+              <h3>Tạo Phòng Mới</h3>
+              <p>Khởi tạo phòng hỗn chiến (Tối đa 5 người), nhận mã phòng để gửi cho bạn bè cùng mạng Wi-Fi/Internet:</p>
+              <button type="button" id="btn-create-room" class="btn-room-action host-action">⚡ Tạo Phòng Mới (Làm Host)</button>
+            </div>
+            <div class="room-action-card join-card">
+              <div class="card-tag">🎮 NGƯỜI CHƠI (CLIENT)</div>
+              <h3>Tham Gia Phòng Đã Có</h3>
+              <p>Nhập mã phòng từ Host để kết nối vào sảnh chờ:</p>
+              <div class="code-input-row">
+                <input type="text" id="join-room-code-input" placeholder="Nhập mã (VD: AGY-5821)" maxlength="16">
+                <button type="button" id="btn-join-room" class="btn-room-action join-action">🚀 Vào Phòng</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Khi đã kết nối vào phòng -->
+          <div class="room-info-bar hidden" id="room-info-bar">
+            <div class="room-badge-group">
+              <span class="room-code-badge">MÃ PHÒNG: <strong id="current-room-code">AGY-XXXX</strong></span>
+              <button type="button" id="btn-copy-room-code" class="btn-sm-action">📋 Copy Mã</button>
+            </div>
+            <div class="room-status-group">
+              <span class="lan-dot connected"></span>
+              <span id="room-user-role-badge" class="badge-role">👑 Chủ Phòng (Host)</span>
+              <span id="room-player-count-badge" class="badge-count">👥 1/5 Người Chơi</span>
+            </div>
+            <button type="button" id="btn-leave-room" class="btn-sm-action btn-danger">🚪 Rời Phòng</button>
+          </div>
+        </div>
+
+        <!-- 2. BỐ CỤC CHÍNH SẢNH CHỜ: TRANG BỊ CÁ NHÂN & DANH SÁCH PHÒNG CHỜ -->
+        <div class="lobby-main-grid">
+          <!-- CỘT TRÁI: THIẾT LẬP CHIẾN BINH & KHO TRANG BỊ CỦA BẠN -->
+          <div class="lobby-col-left">
+            <div class="profile-card">
+              <div class="profile-header">
+                <h3>👤 TRANG BỊ CỦA BẠN</h3>
+                <div class="nickname-field">
+                  <label for="player-nickname-input">Tên bạn:</label>
+                  <input type="text" id="player-nickname-input" value="Chiến Binh" maxlength="14" placeholder="Nhập tên">
+                </div>
+              </div>
+
+              <!-- Xem trước nhân vật Chibi và chỉ số thủ -->
+              <div class="chibi-preview-box">
+                <canvas id="previewPlayer" width="160" height="175"></canvas>
+                <div class="preview-stats">
+                  <div>Máu (HP): <strong>100</strong></div>
+                  <div>Giảm ST Đầu: <span id="stat-head">-0%</span></div>
+                  <div>Giảm ST Thân: <span id="stat-body">-0%</span></div>
+                  <div>Giảm ST Tứ chi: <span id="stat-limbs">-0%</span></div>
+                </div>
+              </div>
+
+              <!-- Chọn Vũ khí Cung tên từ kho -->
+              <div class="equip-group">
+                <label class="group-label">🏹 Chọn Vũ Khí Cung Tên:</label>
+                <select id="my-weapon-select" class="custom-select"></select>
+                <div class="weapon-desc-box" id="my-weapon-desc"></div>
+              </div>
+
+              <!-- Chọn Giáp (Mũ, Áo, Giày) -->
+              <div class="armor-selectors">
+                <div class="equip-item">
+                  <label>🪖 Mũ (Đầu - 200% ST):</label>
+                  <select id="my-helmet-select" class="custom-select"></select>
+                </div>
+                <div class="equip-item">
+                  <label>🥋 Áo Giáp (Thân - 100% ST):</label>
+                  <select id="my-chest-select" class="custom-select"></select>
+                </div>
+                <div class="equip-item">
+                  <label>👢 Giày/Găng (Tứ Chi - 50% ST):</label>
+                  <select id="my-boots-select" class="custom-select"></select>
+                </div>
+              </div>
+
+              <!-- Nút Sẵn sàng (Dành cho Client trong phòng) -->
+              <div class="client-ready-box hidden" id="client-ready-box">
+                <button type="button" id="btn-ready-toggle" class="btn-ready-toggle">
+                  ✅ SẴN SÀNG CHIẾN ĐẤU
+                </button>
+              </div>
+            </div>
+
+            <!-- Chọn Bản Đồ Thi Đấu (Host có quyền chọn, Client đồng bộ hiển thị) -->
+            <div class="map-selector-box">
+              <label class="section-title-label" id="map-select-label">🗺️ CHỌN BẢN ĐỒ CHIẾN TRƯỜNG (CHỦ PHÒNG CHỌN):</label>
+              <div class="map-options-grid">
+                <div class="map-card active" data-map="jungle">
+                  <div class="map-card-badge">🌳 THUNG LŨNG</div>
+                  <div class="map-card-name">Thung Lũng Cổ Thụ</div>
+                  <div class="map-card-desc">Bục quan sát 2 đầu, thung lũng thoáng ở giữa, 5 bục đứng đối xứng.</div>
+                </div>
+                <div class="map-card" data-map="volcano">
+                  <div class="map-card-badge">🌋 VỰC THẲM</div>
+                  <div class="map-card-name">Vực Sâu Dung Nham</div>
+                  <div class="map-card-desc">Bục đá ziczac lơ lửng, không có vật cản che khuất, thử thách tính gió.</div>
+                </div>
+                <div class="map-card" data-map="icecave">
+                  <div class="map-card-badge">❄️ ĐỒI BĂNG</div>
+                  <div class="map-card-name">Đồi Tuyết Vô Tận</div>
+                  <div class="map-card-desc">Gò đồi tuyết uốn lượn thoải dài, khoảng trống bao la bắn tầm xa cực đã.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CỘT PHẢI: PHÒNG CHỜ HIỂN THỊ DANH SÁCH 5 NGƯỜI CHƠI -->
+          <div class="lobby-col-right">
+            <div class="room-members-panel">
+              <div class="panel-header">
+                <h3>👥 PHÒNG CHỜ HỖN CHIẾN (TỐI ĐA 5 NGƯỜI)</h3>
+                <span class="room-info-hint" id="room-info-hint">Tất cả Client phải bấm "Sẵn Sàng" thì Host mới được Bắt Đầu</span>
+              </div>
+
+              <!-- 5 Slot hiển thị trạng thái và thông tin của 5 người chơi -->
+              <div class="room-slots-container" id="room-slots-container">
+                <!-- Tự động sinh danh sách 5 slots người chơi -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. FOOTER: HƯỚNG DẪN & NÚT BẮT ĐẦU TRẬN ĐẤU -->
+        <div class="lobby-footer">
+          <div class="combat-mechanics-info">
+            <span>🔥 <strong>Hỗn Chiến Free For All:</strong> Mọi người chơi bắn lẫn nhau, người sống sót cuối cùng là kẻ chiến thắng!</span>
+            <span>🎯 <strong>Điều Khiển Đồng Nhất:</strong> [A/D] Di chuyển (Tự lật mặt) • [W] Nhảy (x2 Nhảy kép) • [S] Cúi né • <strong>[← / →] Chỉnh góc ngắm</strong> • <strong>Giữ [SPACE] Tụ lực & Bắn</strong></span>
+          </div>
+
+          <!-- Nút Bắt đầu trận đấu (Chỉ mở khi là Host và tất cả Client đã bấm Sẵn sàng) -->
+          <button id="btn-start-game" class="btn-play-action" disabled>
+            ⏳ Vui lòng Tạo Phòng hoặc Vào Phòng để bắt đầu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MÀN HÌNH TỔNG KẾT KẾT THÚC TRẬN ĐẤU (VICTORY MODAL) -->
+    <div id="gameover-modal" class="overlay-screen hidden">
+      <div class="modal-box">
+        <div class="crown-icon">👑</div>
+        <h2 id="winner-title" class="winner-title">NGƯỜI CHIẾN THẮNG!</h2>
+        <p class="winner-subtitle" id="winner-subtitle">Trận hỗn chiến Free For All kịch tính đã kết thúc</p>
+
+        <!-- Bảng xếp hạng thành tích tất cả người chơi -->
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Hạng</th>
+                <th>Chiến Binh</th>
+                <th>Sát Thương</th>
+                <th>Bắn Trúng</th>
+                <th>Độ Chính Xác</th>
+                <th>Kết Quả</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+              <!-- Sẽ render thành tích của các đấu thủ -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-rematch" class="btn-primary">🔄 Tái Đấu Ngay</button>
+          <button id="btn-return-lobby" class="btn-secondary">🏠 Về Sảnh Chờ / Đổi Trang Bị</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio synthesizers / Game Engine -->
+  <script src="game.js"></script>
+</body>
+</html>

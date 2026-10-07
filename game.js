@@ -1,0 +1,3649 @@
+/**
+ * ============================================================================
+ * ĐẠI CHIẾN BẮN CUNG CHIBI - GAME ENGINE VÀ LOGIC CHÍNH
+ * NÂNG CẤP TOÀN DIỆN MỚI:
+ * 1. Cơ chế Nhảy 2 lần (Double Jump): Nhấn nhảy 2 lần liên tục để bật cao vượt trội,
+ *    có hiệu ứng vòng sóng xung kích dưới chân khi kích hoạt cú nhảy thứ 2.
+ * 2. Tái cấu trúc 3 Bản đồ hoàn toàn mới: Thiết kế độ cao các bậc thang chuẩn xác,
+ *    bậc thấp (y=530), bậc trung (y=430), bậc cao (y=320), thạch trụ cản tên hợp lý.
+ * 3. Hiệu ứng gục ngã (Defeat Animation): Khi bất kỳ Bot hay đối thủ nào bị hạ gục,
+ *    nhân vật sẽ ngã nghiêng xuống sàn, hiệu ứng hồn ma chibi bay lên, tan biến dần
+ *    trong ánh hào quang bụi ma thuật sau đó biến mất khỏi trận địa.
+ * 4. Hiệu ứng đồ họa chân thật & sắc nét: Bóng đổ mềm (Drop Shadow), ánh sáng Neon,
+ *    hào quang nguyên tố, vệt khói và tia điện chân thực.
+ * ============================================================================
+ */
+
+// ============================================================================
+// 1. DATA ĐỊNH NGHĨA TRANG BỊ & NGUYÊN TỐ (WEAPONS & ARMOR DATA)
+// ============================================================================
+
+const WEAPONS = [
+  // Cấp A
+  {
+    id: 'bow_a_basic',
+    name: 'Cung Săn Gỗ Rừng',
+    tier: 'A',
+    element: 'none',
+    baseDamage: 18,
+    speedMultiplier: 1.0,
+    special: 'none',
+    desc: 'Cung cơ bản cấp A. Khung gỗ dẻo dai, bắn ổn định không mang nguyên tố.'
+  },
+  {
+    id: 'bow_a_poison',
+    name: 'Cung Cốt Xà Huyết Độc',
+    tier: 'A',
+    element: 'poison',
+    baseDamage: 16,
+    speedMultiplier: 1.0,
+    special: 'none',
+    desc: 'Cấp A - Hệ Độc: Cung làm từ xương với nọc độc tím nhỏ giọt. Chạm đất -> bung ra đám mây khí độc màu tím (trừ máu từ từ).'
+  },
+
+  // Cấp S
+  {
+    id: 'bow_s_fire',
+    name: 'Cung Liệt Hỏa Dung Nham',
+    tier: 'S',
+    element: 'fire',
+    baseDamage: 24,
+    speedMultiplier: 1.15,
+    special: 'none',
+    desc: 'Cấp S - Hệ Lửa: Cung rực đỏ, thân cung như dung nham chảy. Chạm đất -> bùng lên đám cháy ngùn ngụt trên mặt đất (đốt cháy mất máu liên tục).'
+  },
+  {
+    id: 'bow_s_water',
+    name: 'Cung Thủy Tinh Hải Lưu',
+    tier: 'S',
+    element: 'water',
+    baseDamage: 22,
+    speedMultiplier: 1.1,
+    special: 'none',
+    desc: 'Cấp S - Hệ Nước: Cung trong suốt như dòng nước xoáy xanh lam. Chạm đất -> tạo vũng nước xoáy ngầm (làm chậm tốc độ di chuyển).'
+  },
+  {
+    id: 'bow_s_lightning',
+    name: 'Cung Lôi Quang Điện Triệt',
+    tier: 'S',
+    element: 'lightning',
+    baseDamage: 25,
+    speedMultiplier: 1.25,
+    special: 'none',
+    desc: 'Cấp S - Hệ Điện: Cung tỏa ánh sáng vàng rực như tia sét. Chạm đất -> tạo vùng tích điện giật tia lửa (choáng 1 giây khi trúng đích).'
+  },
+
+  // Cấp SS
+  {
+    id: 'bow_ss_ice',
+    name: 'Cung Băng Phách Hàn Băng',
+    tier: 'SS',
+    element: 'ice',
+    baseDamage: 30,
+    speedMultiplier: 1.3,
+    special: 'none',
+    desc: 'Cấp SS - Hệ Băng: Cung làm từ các khối băng nhọn sắc lạnh. Chạm đất -> tạo thành một khối băng lớn trên mặt đất (đóng băng ngắt hành động).'
+  },
+  {
+    id: 'bow_ss_wood',
+    name: 'Cung Mộc Linh Dây Leo Sống',
+    tier: 'SS',
+    element: 'wood',
+    baseDamage: 28,
+    speedMultiplier: 1.2,
+    special: 'none',
+    desc: 'Cấp SS - Hệ Mộc: Cung làm từ dây leo sống có lá phát sáng. Chạm đất -> mọc ra một bụi cây gai góc. Hút máu hồi HP cho người bắn.'
+  },
+  {
+    id: 'bow_ss_wind',
+    name: 'Cung Thanh Phong Vũ Dực',
+    tier: 'SS',
+    element: 'wind',
+    baseDamage: 32,
+    speedMultiplier: 1.85,
+    special: 'wind_pierce',
+    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng khiến đối thủ bị treo lơ lửng 0.5s! Chạm đất sinh lốc xoáy mở rộng hất tung bất kỳ ai giẫm phải như 1 cú nhảy. Mũi tên bay cực nhanh triệt tiêu gió trời.'
+  },
+
+  // Cấp SSS - Vũ khí thần thoại kèm kỹ năng đặc biệt
+  {
+    id: 'bow_sss_split',
+    name: 'Thần Cung Tam Lôi Phân Thân',
+    tier: 'SSS',
+    element: 'lightning',
+    baseDamage: 38,
+    speedMultiplier: 1.45,
+    special: 'split_arrow',
+    desc: 'Cấp SSS - Kỹ năng Phân Thân: Tách làm 3 mũi tên sấm sét khi đang bay. Chạm đất sinh vùng điện giật liên hoàn!'
+  },
+  {
+    id: 'bow_sss_boomerang',
+    name: 'Ngân Nguyệt Hồi Toàn Boomerang',
+    tier: 'SSS',
+    element: 'fire',
+    baseDamage: 36,
+    speedMultiplier: 1.35,
+    special: 'boomerang',
+    desc: 'Cấp SSS - Tên Boomerang: Tự động bám đuôi theo dõi kẻ địch gần nhất trong 0.2s đầu sau khi bắn! Sau đó lượn vòng quay ngược lại gây sát thương cả 2 lượt và để lại biển lửa.'
+  },
+  {
+    id: 'bow_sss_explosive',
+    name: 'Bá Vương Hỏa Pháo Steampunk',
+    tier: 'SSS',
+    element: 'explosion',
+    baseDamage: 42,
+    speedMultiplier: 1.4,
+    special: 'none',
+    desc: 'Cấp SSS - Hệ Nổ: Cung thiết kế cơ khí/steampunk gắn thuốc nổ. Chạm đất -> tạo hiệu ứng vụ nổ lan rộng kèm khói bụi mù mịt!'
+  }
+];
+
+const ARMORS = {
+  helmet: [
+    { id: 'helm_none', name: 'Không Mũ', tier: 'D', defPercent: 0 },
+    { id: 'helm_a', name: 'Mũ Da Thợ Săn (A)', tier: 'A', defPercent: 15 },
+    { id: 'helm_s', name: 'Mũ Sắt Chiến Binh (S)', tier: 'S', defPercent: 30 },
+    { id: 'helm_ss', name: 'Mũ Titan Hộ Mệnh (SS)', tier: 'SS', defPercent: 45 },
+    { id: 'helm_sss', name: 'Vương Miện Thần Thánh (SSS)', tier: 'SSS', defPercent: 65 }
+  ],
+  chest: [
+    { id: 'chest_none', name: 'Không Áo Giáp', tier: 'D', defPercent: 0 },
+    { id: 'chest_a', name: 'Áo Vải Bện Thô (A)', tier: 'A', defPercent: 15 },
+    { id: 'chest_s', name: 'Giáp Xích Bọc Thép (S)', tier: 'S', defPercent: 30 },
+    { id: 'chest_ss', name: 'Hộ Tâm Kính Bạch Kim (SS)', tier: 'SS', defPercent: 45 },
+    { id: 'chest_sss', name: 'Long Lân Chiến Giáp (SSS)', tier: 'SSS', defPercent: 65 }
+  ],
+  boots: [
+    { id: 'boots_none', name: 'Không Giày/Găng', tier: 'D', defPercent: 0 },
+    { id: 'boots_a', name: 'Ủng Da Báo (A)', tier: 'A', defPercent: 15 },
+    { id: 'boots_s', name: 'Găng Hợp Kim Bền (S)', tier: 'S', defPercent: 30 },
+    { id: 'boots_ss', name: 'Chiến Hài Phong Thần (SS)', tier: 'SS', defPercent: 45 },
+    { id: 'boots_sss', name: 'Vũ Thần Hộ Thể (SSS)', tier: 'SSS', defPercent: 65 }
+  ]
+};
+
+// ============================================================================
+// 2. DATA 3 BẢN ĐỒ THI ĐẤU (THIẾT KẾ CẤU TRÚC PHÙ HỢP CHIỀU CAO NHẢY & NHẢY X2)
+// Sàn đất y=620. Nhảy 1 lần: lên bục y=520 (cao 100px). Nhảy x2: lên bục y=410, y=300
+// ============================================================================
+
+const MAP_CONFIGS = {
+  jungle: {
+    id: 'jungle',
+    name: 'Thung Lũng Cổ Thụ',
+    skyColors: ['#1e3799', '#38ada9', '#b8e994'],
+    mountainColor1: '#079992',
+    mountainColor2: '#38ada9',
+    groundColor: '#1e272e',
+    groundTopColor: '#2ed573',
+    flowerColor: '#ff4757',
+    spawns: [
+      { x: 135, y: 520, facing: true },
+      { x: 1145, y: 520, facing: false },
+      { x: 640, y: 250, facing: true },
+      { x: 140, y: 390, facing: true },
+      { x: 1140, y: 390, facing: false }
+    ],
+    platforms: [
+      // 2 Tháp quan sát ở 2 bên biên, để trống 800px thung lũng ở giữa cho đường bay tên cực xa
+      { x: 50, y: 520, width: 170, height: 16, type: 'platform', style: 'moss_wood' },
+      { x: 80, y: 390, width: 120, height: 14, type: 'platform', style: 'moss_wood' },
+
+      { x: 1060, y: 520, width: 170, height: 16, type: 'platform', style: 'moss_wood' },
+      { x: 1080, y: 390, width: 120, height: 14, type: 'platform', style: 'moss_wood' },
+
+      // Cành đại thụ lơ lửng trên cao ở trung tâm
+      { x: 550, y: 250, width: 180, height: 14, type: 'platform', style: 'moss_wood' }
+    ]
+  },
+  volcano: {
+    id: 'volcano',
+    name: 'Vực Sâu Dung Nham',
+    skyColors: ['#1e272e', '#c0392b', '#e67e22'],
+    mountainColor1: '#2c3e50',
+    mountainColor2: '#962d3e',
+    groundColor: '#1e272e',
+    groundTopColor: '#e74c3c',
+    flowerColor: '#f39c12',
+    spawns: [
+      { x: 155, y: 530, facing: true },
+      { x: 1125, y: 530, facing: false },
+      { x: 640, y: 330, facing: true },
+      { x: 350, y: 440, facing: true },
+      { x: 925, y: 440, facing: false }
+    ],
+    platforms: [
+      // Quần đảo đá bazan nổi so le ziczac bậc thang vòm cung mở, hoàn toàn thông thoáng tầm mắt
+      { x: 80, y: 530, width: 150, height: 16, type: 'platform', style: 'basalt' },
+      { x: 290, y: 440, width: 130, height: 14, type: 'platform', style: 'basalt' },
+      { x: 565, y: 330, width: 150, height: 14, type: 'platform', style: 'basalt' },
+      { x: 860, y: 440, width: 130, height: 14, type: 'platform', style: 'basalt' },
+      { x: 1050, y: 530, width: 150, height: 16, type: 'platform', style: 'basalt' }
+    ]
+  },
+  icecave: {
+    id: 'icecave',
+    name: 'Đồi Tuyết Vô Tận',
+    skyColors: ['#0c2461', '#1e3799', '#82ccdd'],
+    mountainColor1: '#60a3bc',
+    mountainColor2: '#4a69bd',
+    groundColor: '#0a3d62',
+    groundTopColor: '#78e08f',
+    flowerColor: '#dff9fb',
+    spawns: [
+      { x: 145, y: 480, facing: true },
+      { x: 1130, y: 490, facing: false },
+      { x: 510, y: 410, facing: true },
+      { x: 800, y: 410, facing: false },
+      { x: 145, y: 320, facing: true }
+    ],
+    platforms: [
+      // Bờ vách băng bất đối xứng: sườn dốc cao phía Tây và các tảng băng trôi lơ lửng giữa trời
+      { x: 50, y: 480, width: 190, height: 16, type: 'platform', style: 'ice_shelf' },
+      { x: 80, y: 320, width: 130, height: 14, type: 'platform', style: 'ice_shelf' },
+      { x: 450, y: 410, width: 120, height: 14, type: 'platform', style: 'ice_shelf' },
+      { x: 740, y: 410, width: 120, height: 14, type: 'platform', style: 'ice_shelf' },
+      { x: 1030, y: 490, width: 200, height: 16, type: 'platform', style: 'ice_shelf' }
+    ]
+  }
+};
+
+// ============================================================================
+// 3. WEB AUDIO SYNTHESIZER
+// ============================================================================
+
+class SoundManager {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playBowCharge(percent) {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180 + percent * 260, this.ctx.currentTime);
+      gain.gain.setValueAtTime(0.04, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.08);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.08);
+    } catch(e) {}
+  }
+
+  playJump(isDouble = false) {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = isDouble ? 'square' : 'sine';
+      osc.frequency.setValueAtTime(isDouble ? 340 : 220, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(isDouble ? 680 : 440, this.ctx.currentTime + 0.14);
+      gain.gain.setValueAtTime(isDouble ? 0.2 : 0.15, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.14);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.14);
+    } catch(e) {}
+  }
+
+  playShoot(element) {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = element === 'lightning' ? 'sawtooth' : 'sine';
+      osc.frequency.setValueAtTime(element === 'lightning' ? 880 : 600, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.2);
+    } catch(e) {}
+  }
+
+  playHit(hitbox) {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = hitbox === 'head' ? 'triangle' : 'square';
+      const baseFreq = hitbox === 'head' ? 900 : (hitbox === 'body' ? 360 : 200);
+      osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, this.ctx.currentTime + 0.22);
+      gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.22);
+    } catch(e) {}
+  }
+
+  playObstacleHit() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(240, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.12);
+    } catch(e) {}
+  }
+
+  playExplosion() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.5);
+    } catch(e) {}
+  }
+
+  playHeal() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.25);
+    } catch(e) {}
+  }
+
+  playDefeatSound() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.6);
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.6);
+    } catch(e) {}
+  }
+
+  playVictory() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        const start = this.ctx.currentTime + i * 0.12;
+        gain.gain.setValueAtTime(0.25, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.35);
+      });
+    } catch(e) {}
+  }
+}
+
+const sounds = new SoundManager();
+
+// ============================================================================
+// 4. VÙNG HIỆU ỨNG LAN (AOE ZONE CLASS)
+// ============================================================================
+
+class AoEZone {
+  constructor(x, y, element, owner) {
+    this.x = x;
+    this.y = y;
+    this.element = element;
+    this.owner = owner;
+    this.radius = 48;
+    this.life = 3.6;
+    this.maxLife = 3.6;
+    this.tickTimer = 0;
+    this.spawnVFX();
+  }
+
+  spawnVFX() {
+    if (this.element === 'explosion') {
+      sounds.playExplosion();
+      for (let i = 0; i < 35; i++) {
+        game.particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*260, (Math.random()-0.5)*260, '#ff4757', 6, 0.6, 'spark'));
+      }
+    }
+  }
+
+  update(dt) {
+    this.life -= dt;
+    this.tickTimer += dt;
+
+    if (Math.random() < 0.45) {
+      const rx = this.x + (Math.random() - 0.5) * this.radius * 1.6;
+      const ry = this.y - Math.random() * 20;
+
+      switch (this.element) {
+        case 'wood':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*20, -30, '#26de81', 4, 0.5, 'leaf'));
+          break;
+        case 'lightning':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*40, (Math.random()-0.5)*40, '#ffd32a', 3, 0.25, 'spark'));
+          break;
+        case 'fire':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*30, -40, '#ff4757', 4, 0.4, 'circle'));
+          break;
+        case 'poison':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*25, -20, '#a55eea', 7, 0.6, 'smoke'));
+          break;
+        case 'water':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*35, -15, '#1e90ff', 3, 0.4, 'circle'));
+          break;
+        case 'ice':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*20, -10, '#70a1ff', 3.5, 0.5, 'spark'));
+          break;
+        case 'wind':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*50, -45, '#ffffff', 3, 0.3, 'circle'));
+          break;
+        case 'explosion':
+          game.particles.push(new Particle(rx, ry, (Math.random()-0.5)*30, -30, '#57606f', 5, 0.5, 'smoke'));
+          break;
+      }
+    }
+
+    // Nếu là lốc xoáy hệ Gió: Kiểm tra tức thì khi có đối thủ đạp trúng vùng hiệu ứng mở rộng -> hất bay lên như 1 lần nhảy
+    if (this.element === 'wind') {
+      const victims = [];
+      if (this.owner === 'p1') {
+        if (game.gameMode === 'vs-ai') victims.push(...game.bots);
+        else if (game.player2) victims.push(game.player2);
+      } else {
+        victims.push(game.player1);
+      }
+
+      victims.forEach(v => {
+        if (!v || v.isDead) return;
+        const distX = Math.abs(v.x - this.x);
+        const distY = Math.abs(v.y - this.y);
+        // Đạp trúng hoặc đi vào vùng lốc xoáy
+        if (distX <= this.radius + 10 && distY <= 38) {
+          if (!v.windBounceCooldown || v.windBounceCooldown <= 0) {
+            v.windBounceCooldown = 0.45;
+            v.vy = v.jumpForce; // Hất tung lên trời với đúng lực của 1 lần nhảy (-470 px/s)
+            v.isGrounded = false;
+            sounds.playJump(false);
+
+            game.particles.push(new Particle(v.x, v.y, 0, 0, '#00d2d3', 1, 0.4, 'shockwave'));
+            for (let i = 0; i < 8; i++) {
+              game.particles.push(new Particle(v.x, v.y, (Math.random()-0.5)*70, -60 - Math.random()*40, '#00d2d3', 3.5, 0.4, 'circle'));
+            }
+            game.floatingTexts.push(new FloatingText(v.x, v.y - 45, '🌪️ HẤT TUNG!', '#00d2d3', 17, true));
+          }
+        }
+      });
+    }
+
+    if (this.tickTimer >= 0.5) {
+      this.tickTimer = 0;
+      this.checkVictims();
+    }
+  }
+
+  checkVictims() {
+    const victims = [];
+    if (this.owner === 'p1') {
+      if (game.gameMode === 'vs-ai') victims.push(...game.bots);
+      else if (game.player2) victims.push(game.player2);
+    } else {
+      victims.push(game.player1);
+    }
+
+    victims.forEach(v => {
+      if (!v || v.isDead) return;
+      const dist = Math.hypot(v.x - this.x, (v.y - v.height / 2) - this.y);
+      if (dist <= this.radius + 15) {
+        const aoeDmg = 3;
+        v.hp = Math.max(0, v.hp - aoeDmg);
+
+        if (this.element === 'water') v.statusEffects.slow = 1.5;
+        if (this.element === 'poison') v.statusEffects.poison = 2.0;
+        if (this.element === 'fire') v.statusEffects.burn = 2.0;
+        if (this.element === 'ice') v.statusEffects.freeze = 0.8;
+        if (this.element === 'lightning') v.statusEffects.stun = 0.5;
+
+        if (this.element === 'wood') {
+          const shooter = game.getCharacterById(this.owner);
+          if (shooter) shooter.heal(2);
+        }
+
+        game.floatingTexts.push(new FloatingText(v.x, v.y - 65, `-${aoeDmg}`, '#ff9f43', 15));
+        if (v.hp <= 0) {
+          v.triggerDefeat();
+        }
+      }
+    });
+  }
+
+  draw(ctx) {
+    ctx.save();
+    const alpha = Math.max(0, this.life / this.maxLife);
+    ctx.globalAlpha = alpha * 0.85;
+
+    if (this.element === 'wood') {
+      ctx.fillStyle = '#26de81';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#10ac84';
+      ctx.lineWidth = 3;
+      for (let i = -30; i <= 30; i += 12) {
+        ctx.beginPath();
+        ctx.moveTo(this.x + i, this.y);
+        ctx.lineTo(this.x + i + 4, this.y - 18);
+        ctx.stroke();
+      }
+    } else if (this.element === 'lightning') {
+      ctx.fillStyle = 'rgba(254, 202, 87, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffd32a';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else if (this.element === 'fire') {
+      const grad = ctx.createRadialGradient(this.x, this.y, 4, this.x, this.y, this.radius);
+      grad.addColorStop(0, '#ff4757');
+      grad.addColorStop(0.6, '#ffa502');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.element === 'ice') {
+      ctx.fillStyle = 'rgba(112, 161, 255, 0.5)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#dff9fb';
+      ctx.strokeStyle = '#70a1ff';
+      ctx.lineWidth = 1.5;
+      for (let i = -24; i <= 24; i += 16) {
+        ctx.beginPath();
+        ctx.moveTo(this.x + i - 8, this.y);
+        ctx.lineTo(this.x + i, this.y - 28);
+        ctx.lineTo(this.x + i + 8, this.y);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+    } else if (this.element === 'poison') {
+      const grad = ctx.createRadialGradient(this.x, this.y, 6, this.x, this.y, this.radius);
+      grad.addColorStop(0, '#8e44ad');
+      grad.addColorStop(0.7, '#a55eea');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y - 8, this.radius, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.element === 'water') {
+      ctx.fillStyle = 'rgba(30, 144, 255, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#48dbfb';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    } else if (this.element === 'wind') {
+      const now = Date.now() / 120;
+      ctx.lineWidth = 2.2;
+      for (let i = 0; i < 3; i++) {
+        const ringY = this.y - 6 - i * 11;
+        const ringRx = this.radius * (0.45 + i * 0.24);
+        const ringRy = 5 + i * 2;
+        const rot = (now * (i % 2 === 0 ? 1 : -1) + i) % (Math.PI * 2);
+
+        ctx.strokeStyle = i === 2 ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 210, 211, 0.75)';
+        ctx.beginPath();
+        ctx.ellipse(this.x, ringY, ringRx, ringRy, rot * 0.2, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = 'rgba(0, 210, 211, 0.16)';
+      ctx.beginPath();
+      ctx.moveTo(this.x - 12, this.y);
+      ctx.quadraticCurveTo(this.x - 28, this.y - 18, this.x - this.radius, this.y - 32);
+      ctx.lineTo(this.x + this.radius, this.y - 32);
+      ctx.quadraticCurveTo(this.x + 28, this.y - 18, this.x + 12, this.y);
+      ctx.closePath();
+      ctx.fill();
+    } else if (this.element === 'explosion') {
+      ctx.fillStyle = 'rgba(47, 53, 66, 0.6)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y, this.radius, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ============================================================================
+// 5. HIỆU ỨNG HẠT CHÂN THẬT (PARTICLES, SHOCKWAVES & LIGHTNING)
+// ============================================================================
+
+class Particle {
+  constructor(x, y, vx, vy, color, size, life, type = 'circle') {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.size = size;
+    this.maxLife = life;
+    this.life = life;
+    this.type = type; // 'circle', 'leaf', 'spark', 'smoke', 'shockwave', 'ghost'
+    this.angle = Math.random() * Math.PI * 2;
+    this.vAngle = (Math.random() - 0.5) * 6;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.angle += this.vAngle * dt;
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    const alpha = Math.max(0, this.life / this.maxLife);
+    ctx.globalAlpha = alpha;
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    if (this.type === 'shockwave') {
+      // Sóng xung kích hình elip khi kích hoạt cú nhảy x2
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, (1 - alpha) * 36 + 10, (1 - alpha) * 14 + 4, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (this.type === 'ghost') {
+      // Hồn ma chibi bay lên khi gục ngã
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 10, 0, Math.PI * 2);
+      ctx.fill();
+      // Đuôi hồn ma
+      ctx.beginPath();
+      ctx.moveTo(-10, 0); ctx.lineTo(-4, 14); ctx.lineTo(0, 8); ctx.lineTo(4, 14); ctx.lineTo(10, 0);
+      ctx.closePath();
+      ctx.fill();
+      // Mắt hồn ma chibi
+      ctx.fillStyle = '#2f3542';
+      ctx.beginPath();
+      ctx.arc(-3, -2, 2, 0, Math.PI * 2);
+      ctx.arc(3, -2, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'leaf') {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.size * 1.6, this.size * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#10ac84';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-this.size * 1.5, 0);
+      ctx.lineTo(this.size * 1.5, 0);
+      ctx.stroke();
+    } else if (this.type === 'spark') {
+      ctx.fillStyle = this.color;
+      ctx.fillRect(-this.size * 1.5, -this.size / 2, this.size * 3, this.size);
+    } else if (this.type === 'smoke') {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * (2 - alpha), 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+class LightningBolt {
+  constructor(x1, y1, x2, y2, color = '#ffd32a', segments = 6) {
+    this.points = [{ x: x1, y: y1 }];
+    const dx = (x2 - x1) / segments;
+    const dy = (y2 - y1) / segments;
+    for (let i = 1; i < segments; i++) {
+      this.points.push({
+        x: x1 + dx * i + (Math.random() - 0.5) * 35,
+        y: y1 + dy * i + (Math.random() - 0.5) * 35
+      });
+    }
+    this.points.push({ x: x2, y: y2 });
+    this.life = 0.16;
+    this.maxLife = 0.16;
+    this.color = color;
+  }
+
+  update(dt) {
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = this.life / this.maxLife;
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(this.points[0].x, this.points[0].y);
+    for (let i = 1; i < this.points.length; i++) {
+      ctx.lineTo(this.points[i].x, this.points[i].y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+class FloatingText {
+  constructor(x, y, text, color, fontSize = 20, isCritical = false) {
+    this.x = x;
+    this.y = y;
+    this.text = text;
+    this.color = color;
+    this.fontSize = fontSize;
+    this.isCritical = isCritical;
+    this.life = 1.2;
+    this.vy = -50;
+  }
+
+  update(dt) {
+    this.y += this.vy * dt;
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    if (this.life <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, this.life * 1.5);
+    ctx.font = `bold ${this.fontSize}px 'Fredoka One', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#000';
+    ctx.fillText(this.text, this.x + 2, this.y + 2);
+    ctx.fillStyle = this.color;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+}
+
+// ============================================================================
+// 6. MŨI TÊN (ARROW CLASS)
+// ============================================================================
+
+class Arrow {
+  constructor(owner, x, y, angle, power, weapon) {
+    this.owner = owner;
+    this.x = x;
+    this.y = y;
+    this.prevX = x;
+    this.prevY = y;
+    this.angle = angle;
+    this.power = power;
+    this.weapon = weapon;
+
+    const speed = (280 + (power / 100) * 750) * weapon.speedMultiplier;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+
+    this.active = true;
+    this.isBoomerang = weapon.special === 'boomerang';
+    this.splitDone = false;
+    this.flightTime = 0;
+    this.trailTimer = 0;
+  }
+
+  update(dt, windX, gravity) {
+    if (!this.active) return;
+    this.flightTime += dt;
+    this.prevX = this.x;
+    this.prevY = this.y;
+
+    let effectiveWind = windX;
+    if (this.weapon.element === 'wind' || this.weapon.special === 'wind_pierce') {
+      effectiveWind = 0;
+    }
+
+    if (this.weapon.special === 'split_arrow' && !this.splitDone && this.flightTime > 0.22) {
+      this.splitDone = true;
+      this.triggerSplit();
+    }
+
+    // KỸ NĂNG CUNG BOOMERANG: Tự động theo dõi kẻ địch gần nhất trong 0.2 giây đầu sau khi bắn
+    if (this.isBoomerang && this.flightTime <= 0.2) {
+      let nearestTarget = null;
+      let minDist = Infinity;
+      const targets = this.owner === 'p1'
+        ? (game.gameMode === 'vs-ai' ? game.bots : [game.player2])
+        : [game.player1];
+
+      for (let t of targets) {
+        if (t && !t.isDead) {
+          const d = Math.hypot(t.x - this.x, (t.y - t.height * 0.5) - this.y);
+          if (d < minDist) {
+            minDist = d;
+            nearestTarget = t;
+          }
+        }
+      }
+
+      if (nearestTarget) {
+        const targetX = nearestTarget.x;
+        const targetY = nearestTarget.y - nearestTarget.height * 0.5;
+        const desiredAngle = Math.atan2(targetY - this.y, targetX - this.x);
+        const currentSpeed = Math.hypot(this.vx, this.vy);
+
+        let angleDiff = desiredAngle - this.angle;
+        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+        const steerRate = 8.5; // Tốc độ bẻ lái bám đuôi mục tiêu (rad/s)
+        const step = Math.sign(angleDiff) * Math.min(Math.abs(angleDiff), steerRate * dt);
+        this.angle += step;
+
+        this.vx = Math.cos(this.angle) * currentSpeed;
+        this.vy = Math.sin(this.angle) * currentSpeed;
+
+        if (Math.random() < 0.45) {
+          game.particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*30, (Math.random()-0.5)*30, '#ffd32a', 3, 0.25, 'spark'));
+        }
+      }
+    }
+
+    if (this.isBoomerang && this.flightTime > 0.6) {
+      const reverseDir = this.owner === 'p1' ? -950 : 950;
+      this.vx += reverseDir * dt;
+      this.vy += Math.sin(this.flightTime * 6) * 70 * dt;
+    }
+
+    this.vx += effectiveWind * dt;
+    this.vy += gravity * dt;
+
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.angle = Math.atan2(this.vy, this.vx);
+
+    this.trailTimer += dt;
+    if (this.trailTimer > 0.02) {
+      this.trailTimer = 0;
+      this.createElementalTrail();
+    }
+  }
+
+  createElementalTrail() {
+    const el = this.weapon.element;
+    const backX = this.x - Math.cos(this.angle) * 16;
+    const backY = this.y - Math.sin(this.angle) * 16;
+
+    if (el === 'lightning') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*50, (Math.random()-0.5)*50, '#feca57', 3, 0.2, 'spark'));
+      if (Math.random() < 0.3) {
+        game.lightnings.push(new LightningBolt(backX, backY, backX + (Math.random()-0.5)*30, backY + (Math.random()-0.5)*30, '#ffd32a', 3));
+      }
+    } else if (el === 'wood') {
+      game.particles.push(new Particle(backX, backY, -this.vx * 0.1 + (Math.random()-0.5)*30, 20 + Math.random()*20, '#26de81', 5, 0.6, 'leaf'));
+    } else if (el === 'fire') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, -30 + Math.random()*-20, '#ff4757', 4, 0.35, 'circle'));
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*15, -15, '#ffa502', 2.5, 0.25, 'circle'));
+    } else if (el === 'ice') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, (Math.random()-0.5)*20, '#70a1ff', 3, 0.4, 'spark'));
+    } else if (el === 'water') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*30, 30, '#1e90ff', 3.5, 0.3, 'circle'));
+    } else if (el === 'poison') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, -10, '#a55eea', 4.5, 0.4, 'smoke'));
+    } else if (el === 'explosion') {
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*40, (Math.random()-0.5)*40, '#ff6b6b', 3.5, 0.3, 'spark'));
+    } else if (el === 'wind') {
+      game.particles.push(new Particle(backX, backY, -this.vx * 0.2, (Math.random()-0.5)*20, 'rgba(255,255,255,0.8)', 2.5, 0.2, 'circle'));
+    }
+  }
+
+  triggerSplit() {
+    const angles = [this.angle - 0.22, this.angle + 0.22];
+    angles.forEach(ang => {
+      const child = new Arrow(this.owner, this.x, this.y, ang, this.power * 0.9, {
+        ...this.weapon,
+        special: 'none'
+      });
+      child.flightTime = 0.23;
+      child.splitDone = true;
+      game.arrows.push(child);
+    });
+
+    for (let i = 0; i < 15; i++) {
+      game.particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*180, (Math.random()-0.5)*180, '#ffd32a', 4, 0.4, 'spark'));
+    }
+  }
+
+  draw(ctx) {
+    if (!this.active) return;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    ctx.strokeStyle = '#576574';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(-22, 0);
+    ctx.lineTo(14, 0);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ff4757';
+    ctx.beginPath();
+    ctx.moveTo(-22, 0);
+    ctx.lineTo(-28, -5);
+    ctx.lineTo(-24, 0);
+    ctx.lineTo(-28, 5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ffa502';
+    if (this.weapon.tier === 'SS') ctx.fillStyle = '#00d2d3';
+    if (this.weapon.tier === 'SSS') ctx.fillStyle = '#ff9f43';
+
+    ctx.beginPath();
+    ctx.moveTo(22, 0);
+    ctx.lineTo(12, -6);
+    ctx.lineTo(14, 0);
+    ctx.lineTo(12, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = this.getGlowColor();
+    ctx.fillStyle = this.getGlowColor();
+    ctx.beginPath();
+    ctx.arc(16, 0, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  getGlowColor() {
+    switch (this.weapon.element) {
+      case 'fire': return '#ff4757';
+      case 'ice': return '#70a1ff';
+      case 'lightning': return '#ffd32a';
+      case 'poison': return '#a55eea';
+      case 'water': return '#2ed573';
+      case 'wood': return '#26de81';
+      case 'wind': return '#ffffff';
+      case 'explosion': return '#ff3838';
+      default: return '#ffa502';
+    }
+  }
+}
+
+// ============================================================================
+// 7. HỘP CỨU THƯƠNG (MEDIKIT SUPPLY DROP)
+// ============================================================================
+
+class Medikit {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 36;
+    this.height = 36;
+    this.vy = 65;
+    this.active = true;
+    this.landed = false;
+    this.angle = 0;
+  }
+
+  update(dt, groundY, platforms) {
+    if (!this.active) return;
+    if (!this.landed) {
+      this.y += this.vy * dt;
+      this.angle = Math.sin(Date.now() / 250) * 0.15;
+
+      for (let plat of platforms) {
+        if (plat.type === 'platform' &&
+            this.x + this.width > plat.x && this.x < plat.x + plat.width &&
+            this.y + this.height >= plat.y && this.y + this.height <= plat.y + 20) {
+          this.y = plat.y - this.height;
+          this.landed = true;
+          this.vy = 0;
+          return;
+        }
+      }
+
+      if (this.y + this.height >= groundY) {
+        this.y = groundY - this.height;
+        this.landed = true;
+        this.vy = 0;
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (!this.active) return;
+    ctx.save();
+    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+    ctx.rotate(this.angle);
+
+    if (!this.landed) {
+      ctx.beginPath();
+      ctx.arc(0, -32, 24, Math.PI, 0, false);
+      ctx.fillStyle = '#ff6b81';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(-22, -32); ctx.lineTo(-10, -10);
+      ctx.moveTo(22, -32); ctx.lineTo(10, -10);
+      ctx.moveTo(0, -32); ctx.lineTo(0, -10);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(-4, -12, 8, 24);
+    ctx.fillRect(-12, -4, 24, 8);
+
+    ctx.restore();
+  }
+}
+
+// ============================================================================
+// 8. NHÂN VẬT CHIBI (CHARACTER CLASS) - NHẢY 2 LẦN & HOẠT ẢNH GỤC NGÃ BIẾN MẤT
+// ============================================================================
+
+class Character {
+  constructor(id, name, x, y, facingRight = true, color = '#2ed573') {
+    this.id = id;
+    this.name = name;
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.facingRight = facingRight;
+    this.color = color;
+
+    this.maxHp = 100;
+    this.hp = 100;
+    this.isDead = false;
+
+    // Cơ chế gục ngã (Defeat Animation)
+    this.defeatState = 'ALIVE'; // 'ALIVE', 'COLLAPSING', 'DISAPPEARED'
+    this.defeatTimer = 0;
+    this.collapseAngle = 0;
+    this.deathOpacity = 1.0;
+
+    this.width = 32;
+    this.height = 54;
+
+    this.weapon = WEAPONS[0];
+    this.helmet = ARMORS.helmet[0];
+    this.chest = ARMORS.chest[0];
+    this.boots = ARMORS.boots[0];
+
+    this.isCrouching = false;
+    this.isGrounded = true;
+    this.moveSpeed = 220;
+
+    // Cơ chế Nhảy 2 lần (Double Jump)
+    this.jumpForce = -470;
+    this.jumpCount = 0;
+    this.maxJumps = 2; // Cho phép nhảy 2 lần liên tục
+
+    this.aimAngle = facingRight ? -0.4 : -2.7;
+    this.isCharging = false;
+    this.chargePower = 0;
+    this.chargeSpeed = 95;
+
+    this.statusEffects = {
+      stun: 0,
+      freeze: 0,
+      burn: 0,
+      poison: 0,
+      slow: 0,
+      levitate: 0
+    };
+    this.windBounceCooldown = 0;
+    this.dotTickTimer = 0;
+
+    this.totalDamageDealt = 0;
+    this.shotsFired = 0;
+    this.hitsLanded = 0;
+    this.hurtTimer = 0;
+  }
+
+  getHitboxes() {
+    if (this.isDead) {
+      return {
+        head: { x: -9999, y: -9999, width: 0, height: 0 },
+        body: { x: -9999, y: -9999, width: 0, height: 0 },
+        limbs: { x: -9999, y: -9999, width: 0, height: 0 }
+      };
+    }
+
+    const currentH = this.isCrouching ? this.height * 0.65 : this.height;
+    const topY = this.y - currentH;
+    const headH = currentH * 0.32;
+    const bodyH = currentH * 0.38;
+    const limbsH = currentH * 0.30;
+
+    return {
+      head: { x: this.x - this.width * 0.45, y: topY, width: this.width * 0.9, height: headH },
+      body: { x: this.x - this.width * 0.5, y: topY + headH, width: this.width, height: bodyH },
+      limbs: { x: this.x - this.width * 0.4, y: topY + headH + bodyH, width: this.width * 0.8, height: limbsH }
+    };
+  }
+
+  // KÍCH HOẠT HIỆU ỨNG GỤC NGÃ KHI HẾT MÁU
+  triggerDefeat() {
+    if (this.isDead) return;
+    this.isDead = true;
+    this.defeatState = 'COLLAPSING';
+    this.defeatTimer = 2.4; // Thời gian hiệu ứng gục ngã trước khi biến mất
+    sounds.playDefeatSound();
+
+    // Hồn ma chibi bay lên trời
+    game.particles.push(new Particle(this.x, this.y - 28, 0, -45, '#ffffff', 8, 2.0, 'ghost'));
+
+    // Chữ bay B.O.T Defeated
+    game.floatingTexts.push(new FloatingText(this.x, this.y - 60, `☠️ ${this.name} GỤC NGÃ!`, '#ff4757', 20, true));
+
+    // Kiểm tra xem trận đấu đã ngã ngũ chưa
+    game.checkGameOver();
+  }
+
+  update(dt, groundY, platforms) {
+    // Xử lý hiệu ứng gục ngã và tan biến
+    if (this.defeatState === 'COLLAPSING') {
+      this.defeatTimer -= dt;
+      // Góc ngã nghiêng dần 90 độ xuống mặt đất
+      this.collapseAngle = Math.min(Math.PI / 2, this.collapseAngle + dt * 2.8);
+
+      // Độ mờ đục giảm dần sau 0.8 giây đầu
+      if (this.defeatTimer < 1.4) {
+        this.deathOpacity = Math.max(0, this.defeatTimer / 1.4);
+      }
+
+      // Sinh bụi ma thuật tan biến lấp lánh
+      if (Math.random() < 0.4) {
+        game.particles.push(new Particle(
+          this.x + (Math.random()-0.5)*30,
+          this.y - 15 + (Math.random()-0.5)*20,
+          (Math.random()-0.5)*20, -30,
+          '#ffd32a', 3, 0.6, 'spark'
+        ));
+      }
+
+      if (this.defeatTimer <= 0) {
+        this.defeatState = 'DISAPPEARED';
+      }
+
+      // Vẫn chịu trọng lực để nằm vững trên đất/bục
+      this.vy += 980 * dt;
+      this.y += this.vy * dt;
+      if (this.y >= groundY) {
+        this.y = groundY;
+        this.vy = 0;
+      }
+      return;
+    }
+
+    if (this.defeatState === 'DISAPPEARED') return;
+
+    if (this.hurtTimer > 0) this.hurtTimer -= dt;
+    if (this.windBounceCooldown > 0) this.windBounceCooldown -= dt;
+
+    this.updateStatusEffects(dt);
+
+    if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.statusEffects.levitate > 0) {
+      this.isCharging = false;
+      this.chargePower = 0;
+      this.vx = 0;
+      if (this.statusEffects.levitate > 0) {
+        this.vy = 0; // Treo lơ lửng trên không, triệt tiêu trọng lực
+        if (Math.random() < 0.5) {
+          game.particles.push(new Particle(this.x + (Math.random()-0.5)*20, this.y - 8, (Math.random()-0.5)*20, -25, '#00d2d3', 2.5, 0.3, 'circle'));
+        }
+      }
+    } else {
+      if (this.isCharging) {
+        this.chargePower += this.chargeSpeed * dt;
+        if (this.chargePower >= 100) this.chargePower = 100;
+        sounds.playBowCharge(this.chargePower / 100);
+      }
+
+      let effectiveSpeed = this.moveSpeed;
+      if (this.statusEffects.slow > 0) effectiveSpeed *= 0.5;
+      this.x += this.vx * effectiveSpeed * dt;
+
+      // Hướng nhìn tự động bám sát góc nhắm
+      this.facingRight = Math.cos(this.aimAngle) >= 0;
+    }
+
+    // Trọng lực rơi (ngừng rơi hoàn toàn khi bị hiệu ứng treo lơ lửng)
+    if (this.statusEffects.levitate > 0) {
+      this.vy = 0;
+    } else {
+      this.vy += 980 * dt;
+      this.y += this.vy * dt;
+    }
+
+    // Tiếp đất trên bục nổi (Platforms) hoặc va chạm thạch trụ
+    this.isGrounded = false;
+    for (let plat of platforms) {
+      if (plat.type === 'platform') {
+        const charFoot = this.y;
+        const prevFoot = this.y - this.vy * dt;
+        if (this.x + this.width * 0.3 > plat.x && this.x - this.width * 0.3 < plat.x + plat.width) {
+          if (prevFoot <= plat.y && charFoot >= plat.y && this.vy >= 0) {
+            this.y = plat.y;
+            this.vy = 0;
+            this.isGrounded = true;
+            this.jumpCount = 0; // Hồi lại số lần nhảy khi tiếp đất
+            break;
+          }
+        }
+      } else if (plat.type === 'pillar') {
+        const halfW = this.width / 2;
+        if (this.y > plat.y && this.y - this.height < plat.y + plat.height) {
+          if (this.x + halfW > plat.x && this.x < plat.x) {
+            this.x = plat.x - halfW;
+          } else if (this.x - halfW < plat.x + plat.width && this.x > plat.x + plat.width) {
+            this.x = plat.x + plat.width + halfW;
+          }
+        }
+      }
+    }
+
+    if (this.y >= groundY) {
+      this.y = groundY;
+      this.vy = 0;
+      this.isGrounded = true;
+      this.jumpCount = 0; // Hồi lại số lần nhảy khi tiếp đất sàn đáy
+    }
+
+    const halfW = this.width / 2;
+    if (this.x < halfW + 20) this.x = halfW + 20;
+    if (this.x > 1280 - halfW - 20) this.x = 1280 - halfW - 20;
+  }
+
+  updateStatusEffects(dt) {
+    for (let key in this.statusEffects) {
+      if (this.statusEffects[key] > 0) {
+        this.statusEffects[key] -= dt;
+      }
+    }
+
+    this.dotTickTimer += dt;
+    if (this.dotTickTimer >= 0.5) {
+      this.dotTickTimer = 0;
+      let dotDmg = 0;
+
+      if (this.statusEffects.burn > 0) {
+        dotDmg += 2.5;
+        game.particles.push(new Particle(this.x, this.y - 40, (Math.random()-0.5)*40, -40, '#ff4757', 5, 0.4, 'circle'));
+      }
+      if (this.statusEffects.poison > 0) {
+        dotDmg += 1.5;
+        game.particles.push(new Particle(this.x, this.y - 40, (Math.random()-0.5)*40, -40, '#a55eea', 5, 0.4, 'smoke'));
+      }
+
+      if (dotDmg > 0) {
+        this.hp = Math.max(0, this.hp - dotDmg);
+        game.floatingTexts.push(new FloatingText(this.x, this.y - 70, `-${dotDmg.toFixed(1)}`, '#e74c3c', 16));
+        if (this.hp <= 0) {
+          this.triggerDefeat();
+        }
+      }
+    }
+  }
+
+  startCharge() {
+    if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.isDead) return;
+    this.isCharging = true;
+    this.chargePower = 10;
+  }
+
+  releaseCharge() {
+    if (!this.isCharging || this.isDead) return;
+    const power = Math.max(15, this.chargePower);
+    this.isCharging = false;
+    this.chargePower = 0;
+    this.fireArrow(power);
+  }
+
+  fireArrow(power) {
+    this.shotsFired++;
+    sounds.playShoot(this.weapon.element);
+
+    const currentH = this.isCrouching ? this.height * 0.65 : this.height;
+    const spawnX = this.x + Math.cos(this.aimAngle) * 24;
+    const spawnY = (this.y - currentH * 0.55) + Math.sin(this.aimAngle) * 24;
+
+    const arrow = new Arrow(this.id, spawnX, spawnY, this.aimAngle, power, this.weapon);
+    game.arrows.push(arrow);
+
+    if (this.weapon.element === 'lightning') {
+      game.lightnings.push(new LightningBolt(spawnX, spawnY, spawnX + Math.cos(this.aimAngle)*60, spawnY + Math.sin(this.aimAngle)*60));
+    } else if (this.weapon.element === 'wood') {
+      for (let i = 0; i < 6; i++) {
+        game.particles.push(new Particle(spawnX, spawnY, (Math.random()-0.5)*60, (Math.random()-0.5)*60, '#2ed573', 5, 0.4, 'leaf'));
+      }
+    }
+  }
+
+  // CƠ CHẾ NHẢY 2 LẦN (DOUBLE JUMP)
+  jump() {
+    if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.statusEffects.levitate > 0 || this.isDead) return;
+
+    if (this.isGrounded) {
+      // Cú nhảy lần 1
+      this.vy = this.jumpForce;
+      this.isGrounded = false;
+      this.jumpCount = 1;
+      sounds.playJump(false);
+    } else if (this.jumpCount === 1) {
+      // Cú nhảy lần 2 (Double Jump - bật cao hơn)
+      this.vy = this.jumpForce * 1.08;
+      this.jumpCount = 2;
+      sounds.playJump(true);
+
+      // Hiệu ứng sóng xung kích dưới chân khi kích hoạt Double Jump
+      game.particles.push(new Particle(this.x, this.y, 0, 0, '#48dbfb', 1, 0.4, 'shockwave'));
+      for (let i = 0; i < 8; i++) {
+        game.particles.push(new Particle(this.x, this.y, (Math.random()-0.5)*80, 20 + Math.random()*30, '#ffffff', 3, 0.3, 'circle'));
+      }
+    }
+  }
+
+  crouch(isDown) {
+    this.isCrouching = isDown;
+  }
+
+  // ĐIỀU CHỈNH QUAY HƯỚNG & LẬT ĐỐI XỨNG GÓC NHẮM
+  setFacing(toRight) {
+    if (this.facingRight === toRight || this.isDead) return;
+    this.facingRight = toRight;
+    // Lật góc nhắm đối xứng gương qua trục thẳng đứng Y:
+    // angle' = -Math.PI - angle  (hoặc Math.atan2(sin, -cos))
+    const sinA = Math.sin(this.aimAngle);
+    const cosA = Math.cos(this.aimAngle);
+    this.aimAngle = Math.atan2(sinA, -cosA);
+  }
+
+  takeDamage(arrow, hitboxName) {
+    if (this.isDead) return;
+    this.hurtTimer = 0.2;
+
+    let multiplier = 1.0;
+    let defPercent = 0;
+
+    if (hitboxName === 'head') {
+      multiplier = 2.0;
+      defPercent = this.helmet.defPercent;
+    } else if (hitboxName === 'body') {
+      multiplier = 1.0;
+      defPercent = this.chest.defPercent;
+    } else {
+      multiplier = 0.5;
+      defPercent = this.boots.defPercent;
+    }
+
+    const rawDamage = arrow.weapon.baseDamage * multiplier;
+    const actualDamage = Math.max(3, rawDamage * (1 - defPercent / 100));
+    this.hp = Math.max(0, this.hp - actualDamage);
+
+    const shooter = game.getCharacterById(arrow.owner);
+    if (shooter) {
+      shooter.totalDamageDealt += Math.round(actualDamage);
+      shooter.hitsLanded++;
+
+      if (arrow.weapon.element === 'wood') {
+        const healAmt = Math.round(actualDamage * 0.5);
+        shooter.heal(healAmt);
+        game.floatingTexts.push(new FloatingText(shooter.x, shooter.y - 70, `+${healAmt} HP (Hút Máu)`, '#2ed573', 20));
+      }
+    }
+
+    this.applyElementalEffect(arrow.weapon.element);
+    sounds.playHit(hitboxName);
+
+    const isCrit = hitboxName === 'head';
+    const textPrefix = isCrit ? '💥 CRIT! -' : '-';
+    const textColor = isCrit ? '#ff4757' : (hitboxName === 'body' ? '#ffa502' : '#f1f2f6');
+    game.floatingTexts.push(new FloatingText(this.x, this.y - 48, `${textPrefix}${Math.round(actualDamage)}`, textColor, isCrit ? 24 : 18, isCrit));
+
+    for (let i = 0; i < 15; i++) {
+      game.particles.push(new Particle(
+        this.x, this.y - 28,
+        (Math.random() - 0.5) * 120,
+        (Math.random() - 0.5) * 120 - 40,
+        isCrit ? '#ff3838' : '#e74c3c', 3.5, 0.4
+      ));
+    }
+
+    if (this.hp <= 0) {
+      this.triggerDefeat();
+    }
+  }
+
+  applyElementalEffect(element) {
+    switch (element) {
+      case 'lightning':
+        this.statusEffects.stun = 1.0;
+        game.lightnings.push(new LightningBolt(this.x, this.y - 180, this.x, this.y - 20, '#ffd32a', 7));
+        break;
+      case 'water':
+        this.statusEffects.slow = 3.0;
+        for (let i = 0; i < 12; i++) {
+          game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*120, (Math.random()-0.5)*120, '#1e90ff', 4, 0.4));
+        }
+        break;
+      case 'ice':
+        this.statusEffects.freeze = 1.5;
+        for (let i = 0; i < 15; i++) {
+          game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*100, (Math.random()-0.5)*100, '#70a1ff', 4, 0.5, 'spark'));
+        }
+        break;
+      case 'poison':
+        this.statusEffects.poison = 4.0;
+        for (let i = 0; i < 15; i++) {
+          game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*80, -30, '#a55eea', 6, 0.5, 'smoke'));
+        }
+        break;
+      case 'fire':
+        this.statusEffects.burn = 3.0;
+        for (let i = 0; i < 15; i++) {
+          game.particles.push(new Particle(this.x, this.y - 30, (Math.random()-0.5)*80, -40, '#ff4757', 5, 0.4));
+        }
+        break;
+      case 'explosion':
+        sounds.playExplosion();
+        for (let i = 0; i < 35; i++) {
+          game.particles.push(new Particle(
+            this.x, this.y - 30,
+            (Math.random() - 0.5) * 260,
+            (Math.random() - 0.5) * 260,
+            '#ff4757', 6, 0.6, 'spark'
+          ));
+        }
+        break;
+      case 'wind':
+        this.statusEffects.levitate = 0.5; // Cung Vũ Dực: Treo lơ lửng trong 0.5s
+        this.vy = 0; // Ngắt rơi tự do ngay lập tức
+        this.vx = 0; // Ngắt quán tính di chuyển ngang
+        for (let i = 0; i < 15; i++) {
+          game.particles.push(new Particle(this.x, this.y - 20, (Math.random()-0.5)*50, -40 - Math.random()*30, '#00d2d3', 3.5, 0.45, 'circle'));
+        }
+        game.floatingTexts.push(new FloatingText(this.x, this.y - 50, '🌪️ LƠ LỬNG (0.5s)', '#00d2d3', 18, true));
+        break;
+    }
+  }
+
+  heal(amount) {
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+    sounds.playHeal();
+    for (let i = 0; i < 12; i++) {
+      game.particles.push(new Particle(
+        this.x + (Math.random() - 0.5) * 40,
+        this.y - 30 + (Math.random() - 0.5) * 40,
+        0, -60, '#2ed573', 4, 0.5, 'leaf'
+      ));
+    }
+  }
+
+  draw(ctx) {
+    if (this.defeatState === 'DISAPPEARED') return;
+
+    ctx.save();
+    ctx.globalAlpha = this.deathOpacity;
+
+    // Hiệu ứng ngã nghiêng khi gục ngã
+    if (this.defeatState === 'COLLAPSING') {
+      const fallDir = this.facingRight ? 1 : -1;
+      ctx.translate(this.x, this.y);
+      ctx.rotate(fallDir * this.collapseAngle);
+      ctx.translate(-this.x, -this.y);
+    }
+
+    if (this.hurtTimer > 0) {
+      ctx.translate((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+    }
+
+    const currentH = this.isCrouching ? this.height * 0.65 : this.height;
+    const isP1 = this.id === 'p1';
+
+    // 0. HÀO QUANG AURA TRANG BỊ
+    if (this.weapon.tier === 'SSS' || this.chest.tier === 'SSS') {
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = 'rgba(254, 202, 87, 0.7)';
+    } else if (this.weapon.tier === 'SS' || this.chest.tier === 'SS') {
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = 'rgba(0, 210, 211, 0.6)';
+    }
+
+    // 1. TỨ CHI
+    const legH = currentH * 0.28;
+    const legY = this.y - legH;
+    ctx.fillStyle = this.getBootsColor();
+    ctx.fillRect(this.x - 10, legY, 7, legH);
+    ctx.fillRect(this.x + 3, legY, 7, legH);
+    ctx.beginPath();
+    ctx.arc(this.x - 6.5, this.y - 2, 4.5, 0, Math.PI * 2);
+    ctx.arc(this.x + 6.5, this.y - 2, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. THÂN (ÁO GIÁP)
+    const bodyH = currentH * 0.38;
+    const bodyY = legY - bodyH;
+    ctx.fillStyle = this.getChestColor();
+    ctx.beginPath();
+    ctx.roundRect(this.x - 12, bodyY, 24, bodyH, [5, 5, 3, 3]);
+    ctx.fill();
+    ctx.strokeStyle = '#2c3e50';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fillRect(this.x - 9, bodyY + 3, 18, 4);
+
+    // 3. ĐẦU VÀ KHUÔN MẶT
+    const headRadius = 15;
+    const headY = bodyY - headRadius + 3;
+
+    // THẺ TÊN VÀ THANH MÁU TRÊN ĐẦU
+    if (this.defeatState !== 'DISAPPEARED') {
+      ctx.save();
+      ctx.font = 'bold 11px Nunito, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = this.color;
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = 'rgba(0,0,0,0.85)';
+      ctx.fillText(`[${this.id.toUpperCase()}] ${this.name}`, this.x, headY - headRadius - 12);
+
+      const hpW = 34;
+      const hpH = 4;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.fillRect(this.x - hpW / 2, headY - headRadius - 8, hpW, hpH);
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x - hpW / 2, headY - headRadius - 8, hpW * Math.max(0, this.hp / this.maxHp), hpH);
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#f8c291';
+    ctx.beginPath();
+    ctx.arc(this.x, headY, headRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#e58e26';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = isP1 ? '#e67e22' : '#2c3e50';
+    ctx.beginPath();
+    ctx.arc(this.x, headY - 3, headRadius + 1.5, Math.PI, Math.PI * 2);
+    ctx.fill();
+
+    if (this.helmet.tier !== 'D') {
+      ctx.fillStyle = this.getHelmetColor();
+      ctx.beginPath();
+      ctx.arc(this.x, headY - 2, headRadius + 2.5, Math.PI * 0.9, Math.PI * 2.1);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    const eyeOffset = this.facingRight ? 3.5 : -3.5;
+    ctx.fillStyle = '#2f3542';
+
+    // Nếu đang gục ngã: mắt vẽ hình chữ X ngất xỉu
+    if (this.defeatState === 'COLLAPSING') {
+      ctx.strokeStyle = '#2f3542';
+      ctx.lineWidth = 1.6;
+      // Mắt trái X
+      ctx.beginPath();
+      ctx.moveTo(this.x - 7 + eyeOffset, headY - 2); ctx.lineTo(this.x - 2 + eyeOffset, headY + 3);
+      ctx.moveTo(this.x - 2 + eyeOffset, headY - 2); ctx.lineTo(this.x - 7 + eyeOffset, headY + 3);
+      // Mắt phải X
+      ctx.moveTo(this.x + 2 + eyeOffset, headY - 2); ctx.lineTo(this.x + 7 + eyeOffset, headY + 3);
+      ctx.moveTo(this.x + 7 + eyeOffset, headY - 2); ctx.lineTo(this.x + 2 + eyeOffset, headY + 3);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(this.x - 4.5 + eyeOffset, headY + 1, 3.2, 0, Math.PI * 2);
+      ctx.arc(this.x + 4.5 + eyeOffset, headY + 1, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(this.x - 5.5 + eyeOffset, headY - 0.5, 1.2, 0, Math.PI * 2);
+      ctx.arc(this.x + 3.5 + eyeOffset, headY - 0.5, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = 'rgba(255, 107, 129, 0.6)';
+    ctx.beginPath();
+    ctx.arc(this.x - 8 + eyeOffset, headY + 5, 3, 0, Math.PI * 2);
+    ctx.arc(this.x + 8 + eyeOffset, headY + 5, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4. CÁNH CUNG NGUYÊN TỐ (Chỉ vẽ nếu còn sống)
+    if (this.defeatState === 'ALIVE') {
+      this.drawElementalBow(ctx, this.x, bodyY + 7);
+    }
+
+    // 5. THANH LỰC TỤ
+    if (this.isCharging) {
+      const meterW = 38;
+      const meterH = 6;
+      const meterX = this.x - meterW / 2;
+      const meterY = headY - headRadius - 14;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+      ctx.fillRect(meterX, meterY, meterW, meterH);
+
+      const fillW = (this.chargePower / 100) * meterW;
+      const grad = ctx.createLinearGradient(meterX, 0, meterX + meterW, 0);
+      grad.addColorStop(0, '#2ed573');
+      grad.addColorStop(0.6, '#ffa502');
+      grad.addColorStop(1, '#ff4757');
+      ctx.fillStyle = grad;
+      ctx.fillRect(meterX, meterY, fillW, meterH);
+
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(meterX, meterY, meterW, meterH);
+    }
+
+    if (this.statusEffects.freeze > 0) {
+      ctx.fillStyle = 'rgba(112, 161, 255, 0.45)';
+      ctx.fillRect(this.x - 18, this.y - currentH - 6, 36, currentH + 10);
+      ctx.strokeStyle = '#70a1ff';
+      ctx.strokeRect(this.x - 18, this.y - currentH - 6, 36, currentH + 10);
+    }
+
+    if (this.statusEffects.stun > 0) {
+      const starAng = Date.now() / 200;
+      ctx.font = '14px serif';
+      ctx.fillText('💫', this.x - 7 + Math.cos(starAng) * 11, headY - headRadius - 8);
+    }
+
+    if (this.statusEffects.levitate > 0) {
+      const spin = Date.now() / 140;
+      ctx.strokeStyle = 'rgba(0, 210, 211, 0.85)';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y - 4, 18, 6, spin, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y - 12, 14, 5, -spin, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  drawElementalBow(ctx, pivotX, pivotY) {
+    ctx.save();
+    ctx.translate(pivotX, pivotY);
+    ctx.rotate(this.aimAngle);
+
+    const el = this.weapon.element;
+    const pullBack = this.isCharging ? (this.chargePower / 100) * 12 : 0;
+
+    if (el === 'wood') {
+      ctx.strokeStyle = '#2ed573';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+
+      ctx.fillStyle = '#26de81';
+      ctx.beginPath();
+      ctx.arc(10 + Math.cos(-1.1) * 15, Math.sin(-1.1) * 15, 3, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(1.1) * 15, Math.sin(1.1) * 15, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (el === 'lightning') {
+      ctx.strokeStyle = '#ffd32a';
+      ctx.lineWidth = 3.2;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(10 + Math.cos(-Math.PI / 2.3) * 15, Math.sin(-Math.PI / 2.3) * 15);
+      ctx.lineTo(18, -6);
+      ctx.lineTo(14, 0);
+      ctx.lineTo(18, 6);
+      ctx.lineTo(10 + Math.cos(Math.PI / 2.3) * 15, Math.sin(Math.PI / 2.3) * 15);
+      ctx.stroke();
+    } else if (el === 'fire') {
+      ctx.strokeStyle = '#ff4757';
+      ctx.lineWidth = 3.8;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#ff6b81';
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+    } else if (el === 'ice') {
+      ctx.strokeStyle = '#70a1ff';
+      ctx.lineWidth = 3.5;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#dff9fb';
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+    } else if (el === 'poison') {
+      ctx.strokeStyle = '#f1f2f6';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+      ctx.fillStyle = '#a55eea';
+      ctx.beginPath();
+      ctx.arc(10 + Math.cos(-0.8) * 15, Math.sin(-0.8) * 15, 2.5, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(0.8) * 15, Math.sin(0.8) * 15, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (el === 'water') {
+      ctx.strokeStyle = 'rgba(72, 219, 251, 0.85)';
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+    } else if (el === 'wind') {
+      ctx.strokeStyle = '#00d2d3';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+    } else if (el === 'explosion') {
+      ctx.strokeStyle = '#e67e22';
+      ctx.lineWidth = 3.8;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+      ctx.fillStyle = '#2f3542';
+      ctx.fillRect(13, -3, 5, 6);
+    } else {
+      ctx.strokeStyle = '#8d6e63';
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(10 + Math.cos(-Math.PI / 2.3) * 15, Math.sin(-Math.PI / 2.3) * 15);
+    ctx.lineTo(10 - pullBack, 0);
+    ctx.lineTo(10 + Math.cos(Math.PI / 2.3) * 15, Math.sin(Math.PI / 2.3) * 15);
+    ctx.stroke();
+
+    if (this.isCharging || this.chargePower > 0) {
+      ctx.strokeStyle = '#c8d6e5';
+      ctx.lineWidth = 2.0;
+      ctx.beginPath();
+      ctx.moveTo(10 - pullBack, 0);
+      ctx.lineTo(26 - pullBack, 0);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  getHelmetColor() {
+    switch (this.helmet.tier) {
+      case 'SSS': return '#ff9f43';
+      case 'SS': return '#00d2d3';
+      case 'S': return '#5f27cd';
+      case 'A': return '#10ac84';
+      default: return '#747d8c';
+    }
+  }
+
+  getChestColor() {
+    switch (this.chest.tier) {
+      case 'SSS': return '#ee5253';
+      case 'SS': return '#341f97';
+      case 'S': return '#2e86de';
+      case 'A': return '#10ac84';
+      default: return this.id === 'p1' ? '#2ed573' : '#ff4757';
+    }
+  }
+
+  getBootsColor() {
+    switch (this.boots.tier) {
+      case 'SSS': return '#ff9f43';
+      case 'SS': return '#00d2d3';
+      case 'S': return '#576574';
+      case 'A': return '#8395a7';
+      default: return '#2f3542';
+    }
+  }
+}
+
+// ============================================================================
+// 9. QUẢN LÝ KẾT NỐI MẠNG WEBRTC FREE FOR ALL (TỐI ĐA 5 NGƯỜI)
+// ============================================================================
+
+const PLAYER_COLORS = {
+  p1: '#2ed573', // Xanh ngọc lục bảo (Host)
+  p2: '#ff4757', // Đỏ san hô
+  p3: '#1e90ff', // Xanh dương
+  p4: '#ffa502', // Vàng cam
+  p5: '#9b59b6'  // Tím thạch anh
+};
+
+class NetworkManager {
+  constructor(game) {
+    this.game = game;
+    this.peer = null;
+    this.bc = null;
+    this.isHost = false;
+    this.isClient = false;
+    this.inRoom = false;
+    this.roomCode = '';
+    this.myPlayerId = 'p1';
+    this.myNickname = 'Chiến Binh 1';
+    this.isReady = false;
+
+    // Quản lý các Client kết nối tới Host: Map clientId -> { conn, id, name, equip, isReady }
+    this.clients = new Map();
+
+    // Kết nối từ Client tới Host
+    this.hostConn = null;
+
+    // Gói tin & ngắt trùng lặp
+    this.receivedPacketIds = new Set();
+    this.lastStateSyncTime = 0;
+
+    // Trạng thái ngắm & di chuyển nội bộ của Client để phản hồi tức thời
+    this.localAimAngle = -Math.PI * 0.4;
+    this.localFacingRight = true;
+  }
+
+  init() {
+    const btnCreate = document.getElementById('btn-create-room');
+    const btnJoin = document.getElementById('btn-join-room');
+    const btnCopy = document.getElementById('btn-copy-room-code');
+    const btnLeave = document.getElementById('btn-leave-room');
+    const btnReady = document.getElementById('btn-ready-toggle');
+    const joinInput = document.getElementById('join-room-code-input');
+    const nickInput = document.getElementById('player-nickname-input');
+
+    if (nickInput) {
+      nickInput.addEventListener('input', () => {
+        this.myNickname = nickInput.value.trim() || 'Chiến Binh';
+        this.onMyProfileChanged();
+      });
+    }
+
+    if (btnCreate) {
+      btnCreate.addEventListener('click', () => {
+        sounds.init();
+        this.createRoom();
+      });
+    }
+
+    if (btnJoin) {
+      btnJoin.addEventListener('click', () => {
+        sounds.init();
+        const code = joinInput ? joinInput.value.trim().toUpperCase() : '';
+        if (code) this.joinRoom(code);
+      });
+    }
+
+    if (joinInput) {
+      joinInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          sounds.init();
+          const code = joinInput.value.trim().toUpperCase();
+          if (code) this.joinRoom(code);
+        }
+      });
+    }
+
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => {
+        if (!this.roomCode) return;
+        navigator.clipboard.writeText(this.roomCode).then(() => {
+          btnCopy.innerText = '✅ Đã Copy!';
+          setTimeout(() => { btnCopy.innerText = '📋 Copy Mã'; }, 2000);
+        }).catch(() => {
+          btnCopy.innerText = '✅ Đã Copy!';
+          setTimeout(() => { btnCopy.innerText = '📋 Copy Mã'; }, 2000);
+        });
+      });
+    }
+
+    if (btnLeave) {
+      btnLeave.addEventListener('click', () => this.leaveRoom());
+    }
+
+    if (btnReady) {
+      btnReady.addEventListener('click', () => this.toggleReady());
+    }
+  }
+
+  generateRoomCode() {
+    return 'AGY-' + Math.floor(1000 + Math.random() * 9000);
+  }
+
+  createRoom() {
+    this.cleanup();
+    const code = this.generateRoomCode();
+    this.roomCode = code;
+    this.isHost = true;
+    this.isClient = false;
+    this.inRoom = true;
+    this.myPlayerId = 'p1';
+    this.isReady = true;
+
+    this.setupBroadcastChannel(code);
+
+    const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const peerId = `agy-ffa-${cleanCode}`;
+
+    if (typeof Peer !== 'undefined') {
+      try {
+        this.peer = new Peer(peerId, { debug: 1 });
+
+        this.peer.on('connection', (conn) => {
+          if (this.clients.size >= 4) {
+            conn.on('open', () => {
+              conn.send({ type: 'ROOM_FULL', message: 'Phòng đã đủ tối đa 5 người chơi!' });
+              setTimeout(() => conn.close(), 500);
+            });
+            return;
+          }
+          this.handleIncomingClientConnection(conn);
+        });
+
+        this.peer.on('error', (err) => {
+          console.warn('PeerJS Host Error:', err);
+        });
+      } catch (e) {
+        console.warn('PeerJS Host init failed:', e);
+      }
+    }
+
+    this.showInRoomUI();
+    this.updateLobbyRoomUI();
+  }
+
+  joinRoom(code) {
+    if (!code) return;
+    this.cleanup();
+    this.roomCode = code;
+    this.isHost = false;
+    this.isClient = true;
+    this.inRoom = true;
+    this.isReady = false;
+
+    this.setupBroadcastChannel(code);
+
+    const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const hostPeerId = `agy-ffa-${cleanCode}`;
+
+    if (typeof Peer !== 'undefined') {
+      try {
+        this.peer = new Peer({ debug: 1 });
+
+        this.peer.on('open', () => {
+          const conn = this.peer.connect(hostPeerId, { reliable: true });
+          this.setupClientConnection(conn);
+        });
+
+        this.peer.on('error', (err) => {
+          console.warn('PeerJS Client Error:', err);
+          alert('Không thể kết nối tới phòng ' + code + '. Hãy kiểm tra lại mã phòng!');
+        });
+      } catch (e) {
+        console.warn('PeerJS Client init failed:', e);
+      }
+    }
+
+    setTimeout(() => {
+      this.sendToHost({
+        type: 'CLIENT_JOIN_REQUEST',
+        nickname: this.myNickname,
+        equip: this.getMyEquip()
+      });
+    }, 450);
+
+    this.showInRoomUI();
+    this.updateLobbyRoomUI();
+  }
+
+  setupBroadcastChannel(code) {
+    try {
+      const channelName = `agy_bc_${code.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+      this.bc = new BroadcastChannel(channelName);
+      this.bc.onmessage = (e) => {
+        this.handleMessage(e.data);
+      };
+    } catch (e) {
+      console.warn('BroadcastChannel error:', e);
+    }
+  }
+
+  handleIncomingClientConnection(conn) {
+    conn.on('open', () => {});
+
+    conn.on('data', (data) => {
+      this.handleMessage(data, conn);
+    });
+
+    conn.on('close', () => {
+      for (let [id, client] of this.clients.entries()) {
+        if (client.conn === conn) {
+          this.clients.delete(id);
+          this.broadcastToClients({
+            type: 'ROOM_PLAYERS_UPDATE',
+            mapId: this.game.currentMapId,
+            roomPlayers: this.getRoomPlayersList()
+          });
+          this.updateLobbyRoomUI();
+          break;
+        }
+      }
+    });
+  }
+
+  setupClientConnection(conn) {
+    this.hostConn = conn;
+
+    conn.on('open', () => {
+      this.sendToHost({
+        type: 'CLIENT_JOIN_REQUEST',
+        nickname: this.myNickname,
+        equip: this.getMyEquip()
+      });
+    });
+
+    conn.on('data', (data) => {
+      this.handleMessage(data);
+    });
+
+    conn.on('close', () => {
+      if (this.game.state === 'PLAYING') {
+        alert('Mất kết nối với Chủ phòng (Host)! Đang trở về sảnh chờ...');
+        this.game.goToLobby();
+      }
+      this.leaveRoom();
+    });
+  }
+
+  getNextAvailableId() {
+    const candidates = ['p2', 'p3', 'p4', 'p5'];
+    for (let c of candidates) {
+      if (!this.clients.has(c)) return c;
+    }
+    return null;
+  }
+
+  sendToHost(msg) {
+    msg._id = `${Date.now()}_${Math.random()}`;
+    msg.fromId = this.myPlayerId;
+
+    if (this.hostConn && this.hostConn.open) {
+      try { this.hostConn.send(msg); } catch(e){}
+    }
+    if (this.bc) {
+      try { this.bc.postMessage(msg); } catch(e){}
+    }
+  }
+
+  broadcastToClients(msg) {
+    msg._id = `${Date.now()}_${Math.random()}`;
+    this.clients.forEach(client => {
+      if (client.conn && client.conn.open) {
+        try { client.conn.send(msg); } catch(e){}
+      }
+    });
+    if (this.bc) {
+      try { this.bc.postMessage(msg); } catch(e){}
+    }
+  }
+
+  handleMessage(msg, conn = null) {
+    if (!msg || typeof msg !== 'object') return;
+
+    if (msg._id) {
+      if (this.receivedPacketIds.has(msg._id)) return;
+      this.receivedPacketIds.add(msg._id);
+      if (this.receivedPacketIds.size > 200) {
+        const first = this.receivedPacketIds.values().next().value;
+        this.receivedPacketIds.delete(first);
+      }
+    }
+
+    if (this.isHost) {
+      switch (msg.type) {
+        case 'CLIENT_JOIN_REQUEST': {
+          let clientId = null;
+          for (let [id, c] of this.clients.entries()) {
+            if (c.name === msg.nickname || c.conn === conn) {
+              clientId = id;
+              break;
+            }
+          }
+          if (!clientId) {
+            clientId = this.getNextAvailableId();
+          }
+          if (!clientId) {
+            if (conn) conn.send({ type: 'ROOM_FULL', message: 'Phòng đã đủ 5 người!' });
+            return;
+          }
+
+          this.clients.set(clientId, {
+            conn: conn,
+            id: clientId,
+            name: msg.nickname || `Chiến Binh ${clientId.toUpperCase()}`,
+            equip: msg.equip,
+            isReady: false
+          });
+
+          const welcomePacket = {
+            type: 'HOST_WELCOME',
+            targetClientId: clientId,
+            assignedId: clientId,
+            mapId: this.game.currentMapId,
+            roomPlayers: this.getRoomPlayersList()
+          };
+          if (conn && conn.open) {
+            conn.send(welcomePacket);
+          }
+          if (this.bc) {
+            this.bc.postMessage(welcomePacket);
+          }
+
+          this.broadcastToClients({
+            type: 'ROOM_PLAYERS_UPDATE',
+            mapId: this.game.currentMapId,
+            roomPlayers: this.getRoomPlayersList()
+          });
+
+          this.updateLobbyRoomUI();
+          break;
+        }
+
+        case 'CLIENT_SET_READY': {
+          const client = this.clients.get(msg.fromId);
+          if (client) {
+            client.isReady = !!msg.isReady;
+            if (msg.equip) client.equip = msg.equip;
+            if (msg.nickname) client.name = msg.nickname;
+
+            this.broadcastToClients({
+              type: 'ROOM_PLAYERS_UPDATE',
+              mapId: this.game.currentMapId,
+              roomPlayers: this.getRoomPlayersList()
+            });
+            this.updateLobbyRoomUI();
+          }
+          break;
+        }
+
+        case 'CLIENT_UPDATE_EQUIP': {
+          const client = this.clients.get(msg.fromId);
+          if (client) {
+            if (msg.equip) client.equip = msg.equip;
+            if (msg.nickname) client.name = msg.nickname;
+            this.broadcastToClients({
+              type: 'ROOM_PLAYERS_UPDATE',
+              mapId: this.game.currentMapId,
+              roomPlayers: this.getRoomPlayersList()
+            });
+            this.updateLobbyRoomUI();
+          }
+          break;
+        }
+
+        case 'CLIENT_INPUT': {
+          const player = this.game.players.find(p => p.id === msg.fromId);
+          if (player && !player.isDead) {
+            player.vx = msg.vx;
+            player.setFacing(msg.facing);
+            player.crouch(msg.crouch);
+            player.aimAngle = msg.aimAngle;
+          }
+          break;
+        }
+
+        case 'CLIENT_JUMP': {
+          const player = this.game.players.find(p => p.id === msg.fromId);
+          if (player && !player.isDead) {
+            player.jump();
+          }
+          break;
+        }
+
+        case 'CLIENT_CHARGE_START': {
+          const player = this.game.players.find(p => p.id === msg.fromId);
+          if (player && !player.isDead && !player.isCharging) {
+            player.startCharge();
+          }
+          break;
+        }
+
+        case 'CLIENT_CHARGE_RELEASE': {
+          const player = this.game.players.find(p => p.id === msg.fromId);
+          if (player && !player.isDead) {
+            player.releaseCharge();
+          }
+          break;
+        }
+      }
+      return;
+    }
+
+    if (this.isClient) {
+      switch (msg.type) {
+        case 'ROOM_FULL':
+          alert('Phòng đã đầy đủ 5 người chơi!');
+          this.leaveRoom();
+          break;
+
+        case 'HOST_WELCOME':
+          if (!msg.targetClientId || msg.targetClientId === this.myPlayerId || this.myPlayerId === 'p1') {
+            this.myPlayerId = msg.assignedId || 'p2';
+            if (msg.mapId) {
+              this.game.applyMapConfig(msg.mapId);
+              this.highlightMapCard(msg.mapId);
+            }
+            this.renderRoomSlots(msg.roomPlayers);
+            this.updateClientRoleUI();
+          }
+          break;
+
+        case 'ROOM_PLAYERS_UPDATE':
+          if (msg.mapId) {
+            this.game.applyMapConfig(msg.mapId);
+            this.highlightMapCard(msg.mapId);
+          }
+          this.renderRoomSlots(msg.roomPlayers);
+          break;
+
+        case 'ROOM_MAP_SYNC':
+          if (msg.mapId) {
+            this.game.applyMapConfig(msg.mapId);
+            this.highlightMapCard(msg.mapId);
+          }
+          break;
+
+        case 'START_MATCH':
+          this.game.startMatchAsClient(msg);
+          break;
+
+        case 'MATCH_STATE_SYNC':
+          this.game.applyMatchStateSync(msg);
+          break;
+
+        case 'MATCH_GAME_OVER':
+          this.game.applyMatchGameOver(msg);
+          break;
+
+        case 'MATCH_REMATCH':
+          this.game.startMatchAsClient(msg);
+          break;
+
+        case 'MATCH_RETURN_LOBBY':
+          this.game.goToLobby();
+          break;
+      }
+    }
+  }
+
+  toggleReady() {
+    if (!this.isClient) return;
+    this.isReady = !this.isReady;
+
+    const btnReady = document.getElementById('btn-ready-toggle');
+    if (btnReady) {
+      if (this.isReady) {
+        btnReady.innerText = '❌ HỦY SẴN SÀNG';
+        btnReady.classList.add('is-ready');
+      } else {
+        btnReady.innerText = '✅ SẴN SÀNG CHIẾN ĐẤU';
+        btnReady.classList.remove('is-ready');
+      }
+    }
+
+    this.sendToHost({
+      type: 'CLIENT_SET_READY',
+      isReady: this.isReady,
+      nickname: this.myNickname,
+      equip: this.getMyEquip()
+    });
+  }
+
+  onMyProfileChanged() {
+    if (!this.inRoom) return;
+
+    if (this.isHost) {
+      this.broadcastToClients({
+        type: 'ROOM_PLAYERS_UPDATE',
+        mapId: this.game.currentMapId,
+        roomPlayers: this.getRoomPlayersList()
+      });
+      this.updateLobbyRoomUI();
+    } else if (this.isClient) {
+      this.sendToHost({
+        type: 'CLIENT_UPDATE_EQUIP',
+        nickname: this.myNickname,
+        equip: this.getMyEquip()
+      });
+    }
+  }
+
+  onHostMapSelect(mapId) {
+    if (!this.isHost) return;
+    this.broadcastToClients({
+      type: 'ROOM_MAP_SYNC',
+      mapId: mapId
+    });
+  }
+
+  getRoomPlayersList() {
+    const list = [
+      {
+        id: 'p1',
+        name: this.isHost ? (this.myNickname || 'Chủ Phòng') : 'Chủ Phòng',
+        isHost: true,
+        isReady: true,
+        color: PLAYER_COLORS.p1,
+        equip: this.isHost ? this.getMyEquip() : { weaponId: 'bow_sss_split', helmId: 'helm_sss', chestId: 'chest_sss', bootsId: 'boots_sss' }
+      }
+    ];
+
+    if (this.isHost) {
+      this.clients.forEach((client, id) => {
+        list.push({
+          id: id,
+          name: client.name,
+          isHost: false,
+          isReady: !!client.isReady,
+          color: PLAYER_COLORS[id] || '#ffa502',
+          equip: client.equip
+        });
+      });
+    }
+
+    return list;
+  }
+
+  updateLobbyRoomUI() {
+    if (!this.inRoom) return;
+
+    const list = this.getRoomPlayersList();
+    this.renderRoomSlots(list);
+
+    const countBadge = document.getElementById('room-player-count-badge');
+    if (countBadge) {
+      countBadge.innerText = `👥 ${list.length}/5 Người Chơi`;
+    }
+
+    const startBtn = document.getElementById('btn-start-game');
+    if (!startBtn) return;
+
+    if (this.isHost) {
+      const clientCount = this.clients.size;
+      const allReady = clientCount >= 1 && Array.from(this.clients.values()).every(c => c.isReady);
+
+      if (clientCount < 1) {
+        startBtn.disabled = true;
+        startBtn.innerText = '⏳ Cần ít nhất 2 người chơi để bắt đầu (1/5)';
+      } else if (!allReady) {
+        const unreadyCount = Array.from(this.clients.values()).filter(c => !c.isReady).length;
+        startBtn.disabled = true;
+        startBtn.innerText = `⏳ Chờ tất cả Client bấm SẴN SÀNG (Còn ${unreadyCount} người)`;
+      } else {
+        startBtn.disabled = false;
+        startBtn.innerText = `⚡ BẮT ĐẦU TRẬN HỖN CHIẾN (${clientCount + 1}/${clientCount + 1} ĐÃ SẴN SÀNG) ⚡`;
+      }
+    } else {
+      startBtn.disabled = true;
+      startBtn.innerText = '⏳ Đang chờ Chủ phòng (Host) bấm Bắt Đầu...';
+    }
+  }
+
+  renderRoomSlots(roomPlayers = []) {
+    const container = document.getElementById('room-slots-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const slots = ['p1', 'p2', 'p3', 'p4', 'p5'];
+
+    slots.forEach((slotId, index) => {
+      const p = roomPlayers.find(rp => rp.id === slotId);
+      const card = document.createElement('div');
+      card.className = `room-slot-card ${p ? 'occupied' : 'empty'}`;
+
+      if (p) {
+        const weaponObj = WEAPONS.find(w => w.id === (p.equip && p.equip.weaponId)) || WEAPONS[0];
+        card.innerHTML = `
+          <div class="slot-left">
+            <div class="slot-avatar" style="background: ${p.color};">
+              ${p.id.toUpperCase()}
+            </div>
+            <div class="slot-info">
+              <div class="slot-name-row">
+                <span class="slot-name">${p.name}</span>
+                <span class="slot-role-tag ${p.isHost ? 'host' : ''}">${p.isHost ? '👑 Host' : '🎮 Client'}</span>
+              </div>
+              <span class="slot-equip-text">🏹 [${weaponObj.tier}] ${weaponObj.name}</span>
+            </div>
+          </div>
+          <div class="slot-status-badge ${p.isReady ? 'ready' : 'unready'}">
+            ${p.isHost ? '👑 Sẵn Sàng (Host)' : (p.isReady ? '🟢 Đã Sẵn Sàng' : '⏳ Đang Chọn Đồ...')}
+          </div>
+        `;
+      } else {
+        card.innerHTML = `
+          <div class="slot-left">
+            <div class="slot-avatar" style="background: #2f3542; border-color: rgba(255,255,255,0.2);">
+              #${index + 1}
+            </div>
+            <div class="slot-info">
+              <span class="slot-name" style="color: #a4b0be;">Vị trí trống</span>
+              <span class="slot-equip-text" style="color: #747d8c;">Đang chờ người chơi kết nối...</span>
+            </div>
+          </div>
+          <div class="slot-status-badge empty-text">
+            Chờ Tham Gia
+          </div>
+        `;
+      }
+      container.appendChild(card);
+    });
+  }
+
+  showInRoomUI() {
+    const connectOptions = document.getElementById('room-connect-options');
+    const roomInfoBar = document.getElementById('room-info-bar');
+    const codeEl = document.getElementById('current-room-code');
+    const roleBadge = document.getElementById('room-user-role-badge');
+    const readyBox = document.getElementById('client-ready-box');
+    const mapLabel = document.getElementById('map-select-label');
+
+    if (connectOptions) connectOptions.classList.add('hidden');
+    if (roomInfoBar) roomInfoBar.classList.remove('hidden');
+    if (codeEl) codeEl.innerText = this.roomCode;
+
+    if (this.isHost) {
+      if (roleBadge) roleBadge.innerText = '👑 Bạn là Chủ Phòng (Host)';
+      if (readyBox) readyBox.classList.add('hidden');
+      if (mapLabel) mapLabel.innerText = '🗺️ CHỌN BẢN ĐỒ CHIẾN TRƯỜNG (BẠN LÀ CHỦ PHÒNG):';
+    } else {
+      if (roleBadge) roleBadge.innerText = '🎮 Bạn là Khách (Client)';
+      if (readyBox) readyBox.classList.remove('hidden');
+      if (mapLabel) mapLabel.innerText = '🗺️ BẢN ĐỒ THI ĐẤU (CHỦ PHÒNG QUYẾT ĐỊNH):';
+    }
+  }
+
+  updateClientRoleUI() {
+    const roleBadge = document.getElementById('room-user-role-badge');
+    if (roleBadge) {
+      roleBadge.innerText = `🎮 Khách (${this.myPlayerId.toUpperCase()})`;
+    }
+  }
+
+  highlightMapCard(mapId) {
+    document.querySelectorAll('.map-card').forEach(c => {
+      if (c.getAttribute('data-map') === mapId) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+  }
+
+  leaveRoom() {
+    this.cleanup();
+    this.inRoom = false;
+    this.isHost = false;
+    this.isClient = false;
+    this.roomCode = '';
+    this.myPlayerId = 'p1';
+    this.isReady = false;
+
+    const connectOptions = document.getElementById('room-connect-options');
+    const roomInfoBar = document.getElementById('room-info-bar');
+    const readyBox = document.getElementById('client-ready-box');
+    const startBtn = document.getElementById('btn-start-game');
+
+    if (connectOptions) connectOptions.classList.remove('hidden');
+    if (roomInfoBar) roomInfoBar.classList.add('hidden');
+    if (readyBox) readyBox.classList.add('hidden');
+
+    if (startBtn) {
+      startBtn.disabled = true;
+      startBtn.innerText = '⏳ Vui lòng Tạo Phòng hoặc Vào Phòng để bắt đầu';
+    }
+
+    this.renderRoomSlots([]);
+  }
+
+  getMyEquip() {
+    const wEl = document.getElementById('my-weapon-select');
+    const hEl = document.getElementById('my-helmet-select');
+    const cEl = document.getElementById('my-chest-select');
+    const bEl = document.getElementById('my-boots-select');
+    return {
+      weaponId: wEl ? wEl.value : 'bow_sss_split',
+      helmId: hEl ? hEl.value : 'helm_sss',
+      chestId: cEl ? cEl.value : 'chest_ss',
+      bootsId: bEl ? bEl.value : 'boots_s'
+    };
+  }
+
+  cleanup() {
+    this.clients.forEach(c => {
+      try { if (c.conn) c.conn.close(); } catch(e){}
+    });
+    this.clients.clear();
+
+    if (this.hostConn) {
+      try { this.hostConn.close(); } catch(e){}
+      this.hostConn = null;
+    }
+    if (this.peer) {
+      try { this.peer.destroy(); } catch(e){}
+      this.peer = null;
+    }
+    if (this.bc) {
+      try { this.bc.close(); } catch(e){}
+      this.bc = null;
+    }
+  }
+}
+
+// ============================================================================
+// 10. ĐIỀU KHIỂN BÀN PHÍM ĐỒNG NHẤT CHO MỌI NGƯỜI CHƠI
+// Phím: A/D di chuyển (tự lật mặt), S cúi né, W nhảy x2,
+// Mũi tên Trái/Phải chỉnh góc ngắm, Giữ Space tụ lực & nhả Space bắn.
+// KHÔNG DÙNG CHUỘT ĐỂ NGẮM BẮN.
+// ============================================================================
+
+class InputHandler {
+  constructor(game) {
+    this.game = game;
+    this.keys = {};
+    this.initListeners();
+  }
+
+  initListeners() {
+    window.addEventListener('keydown', (e) => {
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code) ||
+          ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        if (e.target && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+        }
+      }
+
+      this.keys[e.key.toLowerCase()] = true;
+      this.keys[e.key] = true;
+      this.keys[e.code] = true;
+      sounds.init();
+
+      if (this.game.state !== 'PLAYING') return;
+
+      // Nhảy W (nhấn lần 1 nhảy, nhấn lần 2 nhảy kép)
+      if (e.key.toLowerCase() === 'w') {
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar) myChar.jump();
+        } else if (this.game.network.isClient) {
+          this.game.network.sendToHost({ type: 'CLIENT_JUMP' });
+        }
+      }
+
+      // Giữ Space tụ lực
+      if (e.code === 'Space') {
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar && !myChar.isCharging) myChar.startCharge();
+        } else if (this.game.network.isClient) {
+          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_START' });
+        }
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keys[e.key.toLowerCase()] = false;
+      this.keys[e.key] = false;
+      this.keys[e.code] = false;
+
+      if (this.game.state !== 'PLAYING') return;
+
+      // Thả Space để bắn tên
+      if (e.code === 'Space') {
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar) myChar.releaseCharge();
+        } else if (this.game.network.isClient) {
+          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_RELEASE' });
+        }
+      }
+    });
+  }
+
+  handleHostInput() {
+    const p1 = this.game.players.find(p => p.id === 'p1');
+    if (!p1 || p1.isDead) return;
+
+    p1.vx = 0;
+    if (this.keys['a']) {
+      p1.vx = -1;
+      p1.setFacing(false);
+    }
+    if (this.keys['d']) {
+      p1.vx = 1;
+      p1.setFacing(true);
+    }
+
+    p1.crouch(!!this.keys['s']);
+
+    const angleSpeed = 0.04;
+    if (this.keys['ArrowLeft'] || this.keys['arrowleft']) p1.aimAngle -= angleSpeed;
+    if (this.keys['ArrowRight'] || this.keys['arrowright']) p1.aimAngle += angleSpeed;
+  }
+
+  handleClientInput() {
+    if (!this.game.network.isClient) return;
+
+    let vx = 0;
+    let facing = this.game.network.localFacingRight;
+
+    if (this.keys['a']) {
+      vx = -1;
+      if (facing) {
+        facing = false;
+        const sinA = Math.sin(this.game.network.localAimAngle);
+        const cosA = Math.cos(this.game.network.localAimAngle);
+        this.game.network.localAimAngle = Math.atan2(sinA, -cosA);
+      }
+    }
+    if (this.keys['d']) {
+      vx = 1;
+      if (!facing) {
+        facing = true;
+        const sinA = Math.sin(this.game.network.localAimAngle);
+        const cosA = Math.cos(this.game.network.localAimAngle);
+        this.game.network.localAimAngle = Math.atan2(sinA, -cosA);
+      }
+    }
+    this.game.network.localFacingRight = facing;
+
+    const angleSpeed = 0.04;
+    if (this.keys['ArrowLeft'] || this.keys['arrowleft']) this.game.network.localAimAngle -= angleSpeed;
+    if (this.keys['ArrowRight'] || this.keys['arrowright']) this.game.network.localAimAngle += angleSpeed;
+
+    const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+    if (myChar) {
+      myChar.aimAngle = this.game.network.localAimAngle;
+      myChar.facingRight = facing;
+    }
+
+    this.game.network.sendToHost({
+      type: 'CLIENT_INPUT',
+      vx: vx,
+      facing: facing,
+      crouch: !!this.keys['s'],
+      aimAngle: this.game.network.localAimAngle
+    });
+  }
+}
+
+// ============================================================================
+// 11. QUẢN LÝ TRẬN ĐẤU HỖN CHIẾN FREE FOR ALL (GAME MANAGER)
+// ============================================================================
+
+class GameManager {
+  constructor() {
+    this.canvas = document.getElementById('gameCanvas');
+    this.ctx = this.canvas.getContext('2d');
+    this.state = 'LOBBY';
+    this.currentMapId = 'jungle';
+
+    this.groundY = 620;
+    this.gravity = 520;
+    this.wind = 0;
+    this.windChangeTimer = 0;
+
+    // Danh sách tất cả người chơi trong trận hỗn chiến (Tối đa 5 người)
+    this.players = [];
+
+    this.platforms = [];
+    this.arrows = [];
+    this.aoeZones = [];
+    this.medikits = [];
+    this.particles = [];
+    this.lightnings = [];
+    this.floatingTexts = [];
+    this.medikitSpawnTimer = 0;
+
+    this.network = new NetworkManager(this);
+    this.input = new InputHandler(this);
+
+    this.lastTime = 0;
+  }
+
+  init() {
+    this.applyMapConfig(this.currentMapId);
+    this.setupLobbyUI();
+    this.network.init();
+    this.changeWind();
+    this.renderPreview();
+
+    requestAnimationFrame((ts) => this.loop(ts));
+  }
+
+  applyMapConfig(mapId) {
+    this.currentMapId = mapId;
+    const cfg = MAP_CONFIGS[mapId] || MAP_CONFIGS.jungle;
+    this.platforms = cfg.platforms.map(p => ({ ...p }));
+  }
+
+  changeWind() {
+    this.wind = (Math.random() - 0.5) * 240;
+    this.windChangeTimer = 4 + Math.random() * 4;
+
+    const arrowEl = document.getElementById('wind-arrow');
+    const valEl = document.getElementById('wind-val');
+    if (arrowEl && valEl) {
+      const speed = Math.abs(this.wind / 20).toFixed(1);
+      valEl.innerText = `${speed} m/s ${this.wind >= 0 ? '▶' : '◀'}`;
+      arrowEl.style.transform = `rotate(${this.wind >= 0 ? 0 : 180}deg)`;
+      arrowEl.style.color = Math.abs(this.wind) > 60 ? '#ff4757' : '#70a1ff';
+    }
+  }
+
+  startMatchAsHost() {
+    if (!this.network.isHost) return;
+
+    this.applyMapConfig(this.currentMapId);
+    const spawns = MAP_CONFIGS[this.currentMapId].spawns;
+    const roomList = this.network.getRoomPlayersList();
+
+    this.players = roomList.map((rp, idx) => {
+      const sp = spawns[idx] || { x: 180 + idx * 210, y: 520, facing: idx % 2 === 0 };
+      const char = new Character(rp.id, rp.name, sp.x, sp.y, sp.facing, rp.color);
+      if (rp.equip) {
+        char.weapon = WEAPONS.find(w => w.id === rp.equip.weaponId) || WEAPONS[0];
+        char.helmet = ARMORS.helmet.find(a => a.id === rp.equip.helmId) || ARMORS.helmet[0];
+        char.chest = ARMORS.chest.find(a => a.id === rp.equip.chestId) || ARMORS.chest[0];
+        char.boots = ARMORS.boots.find(a => a.id === rp.equip.bootsId) || ARMORS.boots[0];
+      }
+      return char;
+    });
+
+    this.arrows = [];
+    this.aoeZones = [];
+    this.medikits = [];
+    this.particles = [];
+    this.lightnings = [];
+    this.floatingTexts = [];
+    this.medikitSpawnTimer = 3;
+
+    // Gửi thông báo bắt đầu trận đấu cho tất cả Client
+    this.network.broadcastToClients({
+      type: 'START_MATCH',
+      mapId: this.currentMapId,
+      players: roomList
+    });
+
+    this.state = 'PLAYING';
+    this.transitionToCombatScreen();
+    this.renderCombatHUD();
+    this.changeWind();
+  }
+
+  startMatchAsClient(msg) {
+    this.applyMapConfig(msg.mapId || this.currentMapId);
+    const spawns = MAP_CONFIGS[this.currentMapId].spawns;
+    const roomList = msg.players || msg.roomPlayers || [];
+
+    this.players = roomList.map((rp, idx) => {
+      const sp = spawns[idx] || { x: 180 + idx * 210, y: 520, facing: idx % 2 === 0 };
+      const char = new Character(rp.id, rp.name, sp.x, sp.y, sp.facing, rp.color);
+      if (rp.equip) {
+        char.weapon = WEAPONS.find(w => w.id === rp.equip.weaponId) || WEAPONS[0];
+        char.helmet = ARMORS.helmet.find(a => a.id === rp.equip.helmId) || ARMORS.helmet[0];
+        char.chest = ARMORS.chest.find(a => a.id === rp.equip.chestId) || ARMORS.chest[0];
+        char.boots = ARMORS.boots.find(a => a.id === rp.equip.bootsId) || ARMORS.boots[0];
+      }
+      return char;
+    });
+
+    this.arrows = [];
+    this.aoeZones = [];
+    this.medikits = [];
+    this.particles = [];
+    this.lightnings = [];
+    this.floatingTexts = [];
+
+    this.state = 'PLAYING';
+    this.transitionToCombatScreen();
+    this.renderCombatHUD();
+  }
+
+  transitionToCombatScreen() {
+    document.getElementById('lobby-screen').classList.remove('active');
+    document.getElementById('lobby-screen').classList.add('hidden');
+    document.getElementById('gameover-modal').classList.add('hidden');
+    document.getElementById('combat-hud').classList.remove('hidden');
+    document.getElementById('combat-hud').classList.add('active');
+  }
+
+  renderCombatHUD() {
+    const container = document.getElementById('ffa-huds-wrapper');
+    if (!container) return;
+    container.innerHTML = '';
+
+    this.players.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'player-hud ffa-player-card';
+      card.id = `ffa-hud-${p.id}`;
+      card.innerHTML = `
+        <div class="hud-avatar" style="background: ${p.color};">
+          ${p.id.toUpperCase()}
+        </div>
+        <div class="hud-info">
+          <div class="hud-name-row">
+            <span class="hud-name">${p.name}</span>
+            <span class="hud-weapon-badge">${p.weapon.name} (${p.weapon.tier})</span>
+          </div>
+          <div class="hp-bar-outer">
+            <div class="hp-bar-fill" id="${p.id}-hp-fill" style="width: 100%; background: ${p.color};"></div>
+            <span class="hp-text" id="${p.id}-hp-text">100 / 100</span>
+          </div>
+          <div class="status-tags" id="${p.id}-status-tags"></div>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  loop(timestamp) {
+    if (!this.lastTime) this.lastTime = timestamp;
+    const dt = Math.min(0.08, (timestamp - this.lastTime) / 1000);
+    this.lastTime = timestamp;
+
+    this.update(dt);
+    this.render();
+
+    requestAnimationFrame((ts) => this.loop(ts));
+  }
+
+  update(dt) {
+    if (this.state !== 'PLAYING') return;
+
+    if (this.network.isClient) {
+      this.input.handleClientInput();
+
+      this.particles.forEach(p => p.update(dt));
+      this.particles = this.particles.filter(p => p.life > 0);
+
+      this.lightnings.forEach(l => l.update(dt));
+      this.lightnings = this.lightnings.filter(l => l.life > 0);
+
+      this.floatingTexts.forEach(t => t.update(dt));
+      this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+
+      this.updateCombatHUD();
+      return;
+    }
+
+    // ================= MÁY CHỦ (HOST AUTHORITATIVE SIMULATION) =================
+    this.windChangeTimer -= dt;
+    if (this.windChangeTimer <= 0) {
+      this.changeWind();
+    }
+
+    this.input.handleHostInput();
+
+    // Cập nhật tất cả người chơi
+    this.players.forEach(p => p.update(dt, this.groundY, this.platforms));
+
+    // Sinh hộp cứu thương
+    this.medikitSpawnTimer -= dt;
+    if (this.medikitSpawnTimer <= 0) {
+      const spawnX = 200 + Math.random() * 880;
+      this.medikits.push(new Medikit(spawnX, -50));
+      this.medikitSpawnTimer = 12 + Math.random() * 10;
+    }
+
+    this.medikits.forEach(box => {
+      box.update(dt, this.groundY, this.platforms);
+      if (box.active) {
+        for (let p of this.players) {
+          if (!p.isDead && this.checkCollisionBox(p, box)) {
+            p.heal(25);
+            this.floatingTexts.push(new FloatingText(p.x, p.y - 60, '+25 HP (Cứu Thương)', '#2ed573', 22));
+            box.active = false;
+            break;
+          }
+        }
+      }
+    });
+    this.medikits = this.medikits.filter(b => b.active);
+
+    // Cập nhật mũi tên
+    this.arrows.forEach(arrow => {
+      arrow.update(dt, this.wind, this.gravity);
+      if (arrow.active) {
+        this.checkArrowCollisions(arrow);
+      }
+    });
+    this.arrows = this.arrows.filter(a => a.active && a.y < 850 && a.x > -100 && a.x < 1380);
+
+    // Cập nhật các vùng hiệu ứng lan (AoE)
+    this.aoeZones.forEach(z => z.update(dt));
+    this.aoeZones = this.aoeZones.filter(z => z.life > 0);
+
+    this.particles.forEach(p => p.update(dt));
+    this.particles = this.particles.filter(p => p.life > 0);
+
+    this.lightnings.forEach(l => l.update(dt));
+    this.lightnings = this.lightnings.filter(l => l.life > 0);
+
+    this.floatingTexts.forEach(t => t.update(dt));
+    this.floatingTexts = this.floatingTexts.filter(t => t.life > 0);
+
+    this.updateCombatHUD();
+
+    // Kiểm tra kết thúc trận đấu hỗn chiến
+    this.checkFFAWinCondition();
+
+    // Gửi snapshot trạng thái mượt mà cho tất cả Client
+    this.broadcastMatchStateSync();
+  }
+
+  checkCollisionBox(char, box) {
+    return (
+      char.x + char.width / 2 > box.x &&
+      char.x - char.width / 2 < box.x + box.width &&
+      char.y > box.y &&
+      char.y - char.height < box.y + box.height
+    );
+  }
+
+  checkArrowCollisions(arrow) {
+    for (let plat of this.platforms) {
+      if (this.pointInRect(arrow.x, arrow.y, plat)) {
+        arrow.active = false;
+        sounds.playObstacleHit();
+        this.aoeZones.push(new AoEZone(arrow.x, arrow.y, arrow.weapon.element, arrow.owner));
+
+        for (let i = 0; i < 8; i++) {
+          this.particles.push(new Particle(arrow.x, arrow.y, (Math.random()-0.5)*90, (Math.random()-0.5)*90, '#bdc581', 3, 0.3));
+        }
+        return;
+      }
+    }
+
+    // Hỗn chiến Free For All: Mũi tên có thể gây sát thương lên BẤT KỲ người chơi nào khác
+    for (let target of this.players) {
+      if (target.isDead || target.id === arrow.owner) continue;
+      const hitboxes = target.getHitboxes();
+
+      if (this.pointInRect(arrow.x, arrow.y, hitboxes.head)) {
+        target.takeDamage(arrow, 'head');
+        this.recordHit(arrow.owner, true);
+        arrow.active = false;
+        return;
+      }
+      if (this.pointInRect(arrow.x, arrow.y, hitboxes.body)) {
+        target.takeDamage(arrow, 'body');
+        this.recordHit(arrow.owner, false);
+        arrow.active = false;
+        return;
+      }
+      if (this.pointInRect(arrow.x, arrow.y, hitboxes.limbs)) {
+        target.takeDamage(arrow, 'limbs');
+        this.recordHit(arrow.owner, false);
+        arrow.active = false;
+        return;
+      }
+    }
+
+    if (arrow.y >= this.groundY) {
+      arrow.active = false;
+      this.aoeZones.push(new AoEZone(arrow.x, this.groundY, arrow.weapon.element, arrow.owner));
+      for (let i = 0; i < 6; i++) {
+        this.particles.push(new Particle(arrow.x, this.groundY, (Math.random()-0.5)*80, -Math.random()*60, '#78e08f', 3, 0.3));
+      }
+    }
+  }
+
+  recordHit(ownerId, isHeadshot) {
+    const shooter = this.players.find(p => p.id === ownerId);
+    if (shooter) {
+      shooter.hitsLanded++;
+    }
+  }
+
+  pointInRect(px, py, rect) {
+    return px >= rect.x && px <= rect.x + rect.width && py >= rect.y && py <= rect.y + rect.height;
+  }
+
+  checkFFAWinCondition() {
+    if (this.state !== 'PLAYING') return;
+
+    const alivePlayers = this.players.filter(p => !p.isDead && p.hp > 0);
+
+    // Trận đấu kết thúc khi chỉ còn tối đa 1 người sống sót
+    if (alivePlayers.length <= 1) {
+      setTimeout(() => {
+        if (this.state !== 'PLAYING') return;
+        this.state = 'GAMEOVER';
+        sounds.playVictory();
+
+        const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
+        const leaderboard = this.buildLeaderboardData(winner);
+
+        // Hiển thị modal trên Host
+        this.showLeaderboardModal(leaderboard);
+
+        // Gửi kết quả cho tất cả Client
+        this.network.broadcastToClients({
+          type: 'MATCH_GAME_OVER',
+          leaderboard: leaderboard
+        });
+      }, 1400);
+    }
+  }
+
+  buildLeaderboardData(winner) {
+    // Sắp xếp: Người thắng đứng đầu, các người còn lại xếp theo sát thương gây ra
+    const sorted = [...this.players].sort((a, b) => {
+      if (winner && a.id === winner.id) return -1;
+      if (winner && b.id === winner.id) return 1;
+      return b.totalDamageDealt - a.totalDamageDealt;
+    });
+
+    return sorted.map((p, index) => {
+      const acc = p.shotsFired > 0 ? Math.round((p.hitsLanded / p.shotsFired) * 100) : 0;
+      const isWinner = winner && p.id === winner.id;
+      return {
+        rank: index + 1,
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        damage: p.totalDamageDealt,
+        shots: p.shotsFired,
+        hits: p.hitsLanded,
+        accuracy: acc,
+        isWinner: isWinner,
+        status: isWinner ? '🏆 CHIẾN THẮNG' : '💀 BỊ HẠ GỤC'
+      };
+    });
+  }
+
+  showLeaderboardModal(leaderboard) {
+    const winnerEntry = leaderboard.find(e => e.isWinner);
+    const titleEl = document.getElementById('winner-title');
+    if (titleEl) {
+      titleEl.innerText = winnerEntry
+        ? `🎉 ${winnerEntry.name} CHIẾN THẮNG!`
+        : 'HÒA NHAU KHÔNG PHÂN THẮNG BẠI!';
+    }
+
+    const tbody = document.getElementById('leaderboard-body');
+    if (tbody) {
+      tbody.innerHTML = '';
+      leaderboard.forEach(entry => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="rank-badge rank-${entry.rank}">#${entry.rank}</span></td>
+          <td><strong style="color: ${entry.color}">${entry.name}</strong></td>
+          <td><strong style="color: #ff6b81">${entry.damage}</strong></td>
+          <td>${entry.hits} / ${entry.shots}</td>
+          <td><strong style="color: #2ed573">${entry.accuracy}%</strong></td>
+          <td><strong>${entry.status}</strong></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('gameover-modal').classList.remove('hidden');
+    document.getElementById('gameover-modal').classList.add('active');
+  }
+
+  broadcastMatchStateSync() {
+    if (!this.network.isHost) return;
+
+    const now = Date.now();
+    if (now - this.lastStateSyncTime < 25) return;
+    this.lastStateSyncTime = now;
+
+    this.network.broadcastToClients({
+      type: 'MATCH_STATE_SYNC',
+      wind: this.wind,
+      players: this.players.map(p => ({
+        id: p.id,
+        name: p.name,
+        x: p.x,
+        y: p.y,
+        vx: p.vx,
+        vy: p.vy,
+        hp: p.hp,
+        maxHp: p.maxHp,
+        color: p.color,
+        facing: p.facingRight,
+        crouch: p.isCrouching,
+        charging: p.isCharging,
+        chargePower: p.chargePower,
+        aimAngle: p.aimAngle,
+        status: { ...p.statusEffects },
+        defeatState: p.defeatState,
+        deathOpacity: p.deathOpacity,
+        collapseAngle: p.collapseAngle,
+        shotsFired: p.shotsFired,
+        hitsLanded: p.hitsLanded,
+        totalDamageDealt: p.totalDamageDealt,
+        isDead: p.isDead
+      })),
+      arrows: this.arrows.map(a => ({
+        x: a.x,
+        y: a.y,
+        vx: a.vx,
+        vy: a.vy,
+        angle: a.angle,
+        element: a.weapon.element,
+        tier: a.weapon.tier,
+        owner: a.owner,
+        isBoomerang: a.isBoomerang,
+        isReturning: a.isReturning
+      })),
+      aoe: this.aoeZones.map(z => ({
+        x: z.x,
+        y: z.y,
+        radius: z.radius,
+        element: z.element,
+        owner: z.owner,
+        life: z.life,
+        maxLife: z.maxLife
+      })),
+      medikits: this.medikits.map(m => ({
+        x: m.x,
+        y: m.y,
+        active: m.active
+      }))
+    });
+  }
+
+  applyMatchStateSync(msg) {
+    if (this.state !== 'PLAYING') return;
+
+    this.wind = msg.wind;
+    const arrowEl = document.getElementById('wind-arrow');
+    const valEl = document.getElementById('wind-val');
+    if (arrowEl && valEl) {
+      const speed = Math.abs(this.wind / 20).toFixed(1);
+      valEl.innerText = `${speed} m/s ${this.wind >= 0 ? '▶' : '◀'}`;
+      arrowEl.style.transform = `rotate(${this.wind >= 0 ? 0 : 180}deg)`;
+      arrowEl.style.color = Math.abs(this.wind) > 60 ? '#ff4757' : '#70a1ff';
+    }
+
+    if (msg.players) {
+      msg.players.forEach(sp => {
+        let p = this.players.find(x => x.id === sp.id);
+        if (!p) {
+          p = new Character(sp.id, sp.name, sp.x, sp.y, sp.facing, sp.color);
+          this.players.push(p);
+        }
+        p.x = sp.x;
+        p.y = sp.y;
+        p.vx = sp.vx;
+        p.vy = sp.vy;
+        p.hp = sp.hp;
+        p.facingRight = sp.facing;
+        p.isCrouching = sp.crouch;
+        p.isCharging = sp.charging;
+        p.chargePower = sp.chargePower;
+        p.statusEffects = sp.status;
+        p.defeatState = sp.defeatState;
+        p.deathOpacity = sp.deathOpacity;
+        p.collapseAngle = sp.collapseAngle;
+        p.shotsFired = sp.shotsFired;
+        p.hitsLanded = sp.hitsLanded;
+        p.totalDamageDealt = sp.totalDamageDealt;
+        p.isDead = sp.isDead;
+
+        if (sp.id === this.network.myPlayerId) {
+          p.aimAngle = this.network.localAimAngle;
+          p.facingRight = this.network.localFacingRight;
+        } else {
+          p.aimAngle = sp.aimAngle;
+        }
+      });
+    }
+
+    if (msg.arrows) {
+      this.arrows = msg.arrows.map(a => {
+        const dummyWeapon = WEAPONS.find(w => w.element === a.element && w.tier === a.tier) || WEAPONS[0];
+        const arrow = new Arrow(a.owner, a.x, a.y, a.angle, 300, dummyWeapon);
+        arrow.vx = a.vx;
+        arrow.vy = a.vy;
+        arrow.isBoomerang = a.isBoomerang;
+        arrow.isReturning = a.isReturning;
+        return arrow;
+      });
+    }
+
+    if (msg.aoe) {
+      this.aoeZones = msg.aoe.map(z => {
+        const zone = new AoEZone(z.x, z.y, z.element, z.owner);
+        zone.radius = z.radius;
+        zone.life = z.life;
+        zone.maxLife = z.maxLife;
+        return zone;
+      });
+    }
+
+    if (msg.medikits) {
+      this.medikits = msg.medikits.map(m => {
+        const box = new Medikit(m.x, m.y);
+        box.active = m.active;
+        return box;
+      });
+    }
+
+    this.updateCombatHUD();
+  }
+
+  applyMatchGameOver(msg) {
+    this.state = 'GAMEOVER';
+    sounds.playVictory();
+    this.showLeaderboardModal(msg.leaderboard);
+  }
+
+  updateCombatHUD() {
+    this.players.forEach(p => {
+      const card = document.getElementById(`ffa-hud-${p.id}`);
+      if (card && p.isDead) {
+        card.classList.add('eliminated');
+      }
+
+      const fillEl = document.getElementById(`${p.id}-hp-fill`);
+      const textEl = document.getElementById(`${p.id}-hp-text`);
+      if (fillEl && textEl) {
+        const hpPercent = Math.max(0, (p.hp / p.maxHp) * 100);
+        fillEl.style.width = `${hpPercent}%`;
+        textEl.innerText = `${Math.ceil(Math.max(0, p.hp))} / ${p.maxHp}`;
+      }
+
+      this.renderStatusTags(`${p.id}-status-tags`, p.statusEffects);
+    });
+  }
+
+  renderStatusTags(containerId, effects) {
+    const el = document.getElementById(containerId);
+    if (!el || !effects) return;
+    let html = '';
+    if (effects.burn > 0) html += `<span class="status-tag status-burn">🔥 (${effects.burn.toFixed(1)}s)</span>`;
+    if (effects.freeze > 0) html += `<span class="status-tag status-freeze">❄️ (${effects.freeze.toFixed(1)}s)</span>`;
+    if (effects.stun > 0) html += `<span class="status-tag status-stun">⚡ (${effects.stun.toFixed(1)}s)</span>`;
+    if (effects.poison > 0) html += `<span class="status-tag status-poison">☠️ (${effects.poison.toFixed(1)}s)</span>`;
+    if (effects.slow > 0) html += `<span class="status-tag status-slow">💧 (${effects.slow.toFixed(1)}s)</span>`;
+    if (effects.levitate > 0) html += `<span class="status-tag status-wind">🌪️ (${effects.levitate.toFixed(1)}s)</span>`;
+    el.innerHTML = html;
+  }
+
+  render() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    const cfg = MAP_CONFIGS[this.currentMapId] || MAP_CONFIGS.jungle;
+    this.drawSkyAndEnvironment(ctx, cfg);
+    this.platforms.forEach(plat => this.drawPlatform(ctx, plat));
+
+    if (this.state === 'PLAYING' || this.state === 'GAMEOVER') {
+      this.aoeZones.forEach(z => z.draw(ctx));
+      this.medikits.forEach(box => box.draw(ctx));
+
+      // Vẽ tất cả người chơi trong trận hỗn chiến
+      this.players.forEach(p => p.draw(ctx));
+
+      this.arrows.forEach(arrow => arrow.draw(ctx));
+      this.particles.forEach(p => p.draw(ctx));
+      this.lightnings.forEach(l => l.draw(ctx));
+      this.floatingTexts.forEach(t => t.draw(ctx));
+
+      // Vẽ đường định hướng ngắm cho tất cả người chơi còn sống
+      this.players.forEach(p => {
+        if (!p.isDead) this.drawAimGuide(ctx, p);
+      });
+    }
+  }
+
+  drawAimGuide(ctx, char) {
+    if (!char || char.isDead) return;
+    const currentH = char.isCrouching ? char.height * 0.65 : char.height;
+    const startX = char.x + Math.cos(char.aimAngle) * 35;
+    const startY = (char.y - currentH * 0.6) + Math.sin(char.aimAngle) * 35;
+
+    ctx.save();
+    ctx.setLineDash([4, 6]);
+    ctx.strokeStyle = char.color || '#2ed573';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(startX + Math.cos(char.aimAngle) * 95, startY + Math.sin(char.aimAngle) * 95);
+    ctx.stroke();
+
+    const endX = startX + Math.cos(char.aimAngle) * 95;
+    const endY = startY + Math.sin(char.aimAngle) * 95;
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.beginPath();
+    ctx.arc(endX, endY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  drawSkyAndEnvironment(ctx, cfg) {
+    const grad = ctx.createLinearGradient(0, 0, 0, 600);
+    grad.addColorStop(0, cfg.skyColors[0]);
+    grad.addColorStop(0.5, cfg.skyColors[1]);
+    grad.addColorStop(1, cfg.skyColors[2]);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1280, 720);
+
+    ctx.fillStyle = this.currentMapId === 'volcano' ? 'rgba(87, 96, 111, 0.45)' : 'rgba(255, 255, 255, 0.6)';
+    this.drawCloud(ctx, 220, 120, 55);
+    this.drawCloud(ctx, 680, 80, 70);
+    this.drawCloud(ctx, 1050, 150, 50);
+
+    ctx.fillStyle = cfg.mountainColor1;
+    ctx.beginPath();
+    ctx.moveTo(0, 620); ctx.lineTo(260, 420); ctx.lineTo(580, 620);
+    ctx.fill();
+
+    ctx.fillStyle = cfg.mountainColor2;
+    ctx.beginPath();
+    ctx.moveTo(480, 620); ctx.lineTo(820, 390); ctx.lineTo(1180, 620);
+    ctx.fill();
+
+    ctx.fillStyle = cfg.groundColor;
+    ctx.fillRect(0, this.groundY, 1280, 100);
+
+    ctx.fillStyle = cfg.groundTopColor;
+    ctx.fillRect(0, this.groundY, 1280, 14);
+
+    ctx.fillStyle = cfg.flowerColor;
+    for (let i = 80; i < 1240; i += 180) {
+      ctx.beginPath();
+      ctx.arc(i, this.groundY + 4, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  drawCloud(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.arc(x + r * 0.7, y - r * 0.2, r * 0.75, 0, Math.PI * 2);
+    ctx.arc(x - r * 0.7, y - r * 0.1, r * 0.65, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  drawPlatform(ctx, plat) {
+    ctx.save();
+    if (plat.type === 'platform') {
+      let topColor = '#2ed573';
+      let bodyColor = '#57606f';
+
+      if (this.currentMapId === 'volcano') {
+        topColor = '#e74c3c';
+        bodyColor = '#2f3542';
+      } else if (this.currentMapId === 'icecave') {
+        topColor = '#c7ecee';
+        bodyColor = '#48dbfb';
+      }
+
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.roundRect(plat.x, plat.y, plat.width, plat.height, [6, 6, 8, 8]);
+      ctx.fill();
+
+      ctx.fillStyle = topColor;
+      ctx.fillRect(plat.x, plat.y, plat.width, 6);
+
+      ctx.strokeStyle = '#1e272e';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(plat.x, plat.y, plat.width, plat.height);
+    }
+    ctx.restore();
+  }
+
+  setupLobbyUI() {
+    const weaponSelect = document.getElementById('my-weapon-select');
+    if (weaponSelect) {
+      weaponSelect.innerHTML = '';
+      WEAPONS.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.id;
+        opt.innerText = `[${w.tier}] ${w.name}`;
+        weaponSelect.appendChild(opt);
+      });
+      weaponSelect.value = 'bow_sss_split';
+    }
+
+    this.populateArmorSelect('my-helmet-select', ARMORS.helmet, 'helm_sss');
+    this.populateArmorSelect('my-chest-select', ARMORS.chest, 'chest_ss');
+    this.populateArmorSelect('my-boots-select', ARMORS.boots, 'boots_s');
+
+    document.querySelectorAll('.map-card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (!this.network.isHost && this.network.inRoom) {
+          alert('Chỉ Chủ phòng (Host) mới có quyền đổi bản đồ thi đấu!');
+          return;
+        }
+        document.querySelectorAll('.map-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const mapId = card.getAttribute('data-map');
+        this.applyMapConfig(mapId);
+        this.network.onHostMapSelect(mapId);
+      });
+    });
+
+    const updateAll = () => {
+      this.updateWeaponDescriptions();
+      this.renderPreview();
+      this.network.onMyProfileChanged();
+    };
+
+    ['my-weapon-select', 'my-helmet-select', 'my-chest-select', 'my-boots-select'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', updateAll);
+    });
+
+    updateAll();
+
+    // Nút Bắt Đầu Trận Đấu
+    const startBtn = document.getElementById('btn-start-game');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        if (!this.network.isHost) {
+          alert('Chỉ Chủ phòng (Host) mới có quyền bấm Bắt đầu trận đấu!');
+          return;
+        }
+        sounds.init();
+        this.startMatchAsHost();
+      });
+    }
+
+    // Nút Tái Đấu
+    const rematchBtn = document.getElementById('btn-rematch');
+    if (rematchBtn) {
+      rematchBtn.addEventListener('click', () => {
+        if (this.network.isHost) {
+          sounds.init();
+          this.startMatchAsHost();
+          this.network.broadcastToClients({ type: 'MATCH_REMATCH', mapId: this.currentMapId, players: this.network.getRoomPlayersList() });
+        } else {
+          alert('Vui lòng chờ Chủ phòng (Host) bấm Tái Đấu!');
+        }
+      });
+    }
+
+    // Nút Về Sảnh
+    const handleReturn = () => {
+      if (this.network.isHost) {
+        this.network.broadcastToClients({ type: 'MATCH_RETURN_LOBBY' });
+      }
+      this.goToLobby();
+    };
+
+    const returnBtn = document.getElementById('btn-return-lobby');
+    const backBtn = document.getElementById('btn-back-lobby');
+    if (returnBtn) returnBtn.addEventListener('click', handleReturn);
+    if (backBtn) backBtn.addEventListener('click', handleReturn);
+
+    const soundBtn = document.getElementById('btn-sound-toggle');
+    if (soundBtn) {
+      soundBtn.addEventListener('click', () => {
+        sounds.enabled = !sounds.enabled;
+        soundBtn.innerText = sounds.enabled ? '🔊' : '🔇';
+      });
+    }
+  }
+
+  populateArmorSelect(selectId, armors, defaultValue) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '';
+    armors.forEach(a => {
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.innerText = `${a.name} (-${a.defPercent}%)`;
+      sel.appendChild(opt);
+    });
+    sel.value = defaultValue;
+  }
+
+  updateWeaponDescriptions() {
+    const wEl = document.getElementById('my-weapon-select');
+    const descEl = document.getElementById('my-weapon-desc');
+    if (wEl && descEl) {
+      const w = WEAPONS.find(item => item.id === wEl.value);
+      if (w) {
+        descEl.innerHTML = `
+          <strong>Sát thương:</strong> ${w.baseDamage} | <strong>Tốc độ tên:</strong> x${w.speedMultiplier}<br>
+          <strong>Kỹ năng:</strong> ${w.desc}
+        `;
+      }
+    }
+
+    const hEl = document.getElementById('my-helmet-select');
+    const cEl = document.getElementById('my-chest-select');
+    const bEl = document.getElementById('my-boots-select');
+    if (hEl) {
+      const h = ARMORS.helmet.find(a => a.id === hEl.value);
+      if (h) document.getElementById('stat-head').innerText = `-${h.defPercent}%`;
+    }
+    if (cEl) {
+      const c = ARMORS.chest.find(a => a.id === cEl.value);
+      if (c) document.getElementById('stat-body').innerText = `-${c.defPercent}%`;
+    }
+    if (bEl) {
+      const b = ARMORS.boots.find(a => a.id === bEl.value);
+      if (b) document.getElementById('stat-limbs').innerText = `-${b.defPercent}%`;
+    }
+  }
+
+  renderPreview() {
+    const canvas = document.getElementById('previewPlayer');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height - 28);
+    ctx.scale(1.4, 1.4);
+
+    const dummy = new Character('p1', 'Preview', 0, 0, true, '#2ed573');
+    dummy.weapon = WEAPONS.find(w => w.id === document.getElementById('my-weapon-select').value) || WEAPONS[0];
+    dummy.helmet = ARMORS.helmet.find(a => a.id === document.getElementById('my-helmet-select').value) || ARMORS.helmet[0];
+    dummy.chest = ARMORS.chest.find(a => a.id === document.getElementById('my-chest-select').value) || ARMORS.chest[0];
+    dummy.boots = ARMORS.boots.find(a => a.id === document.getElementById('my-boots-select').value) || ARMORS.boots[0];
+
+    dummy.aimAngle = -0.38;
+    dummy.draw(ctx);
+    ctx.restore();
+  }
+
+  goToLobby() {
+    this.state = 'LOBBY';
+    document.getElementById('combat-hud').classList.remove('active');
+    document.getElementById('combat-hud').classList.add('hidden');
+    document.getElementById('gameover-modal').classList.remove('active');
+    document.getElementById('gameover-modal').classList.add('hidden');
+
+    document.getElementById('lobby-screen').classList.remove('hidden');
+    document.getElementById('lobby-screen').classList.add('active');
+
+    this.renderPreview();
+    this.network.updateLobbyRoomUI();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  window.game = new GameManager();
+  game.init();
+});
