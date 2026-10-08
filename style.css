@@ -293,6 +293,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .wind-widget {
@@ -1355,21 +1357,29 @@ body {
    ========================================================================== */
 .ffa-huds-wrapper {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 8px;
-  max-width: 950px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ffa-huds-wrapper::-webkit-scrollbar {
+  display: none;
 }
 
 .ffa-player-card {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: rgba(18, 26, 38, 0.94);
   border: 1.5px solid rgba(255, 255, 255, 0.18);
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: 12px;
-  min-width: 185px;
-  max-width: 210px;
+  flex: 1 1 170px;
+  min-width: 160px;
+  max-width: 200px;
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   transition: all 0.25s ease;
@@ -1384,15 +1394,15 @@ body {
 }
 
 .ffa-player-card .hud-avatar {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
@@ -1418,7 +1428,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 95px;
+  max-width: 80px;
 }
 
 .ffa-player-card .hud-weapon-badge {
@@ -1428,60 +1438,78 @@ body {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.15);
   color: #ffd32a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 85px;
 }
 
 .ffa-player-card .hp-bar-outer {
-  height: 10px;
+  height: 12px;
   background: rgba(0, 0, 0, 0.7);
-  border-radius: 5px;
+  border-radius: 6px;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .ffa-player-card .hp-bar-fill {
   height: 100%;
-  border-radius: 5px;
+  border-radius: 6px;
   transition: width 0.2s ease;
 }
 
 .ffa-player-card .hp-text {
   position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
-  text-align: center;
-  top: -1px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
   font-size: 0.58rem;
   font-weight: 800;
   color: #fff;
   text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+  line-height: 1;
 }
 
 .ffa-player-card .energy-bar-outer {
-  height: 8px;
+  height: 10px;
   background: rgba(0, 0, 0, 0.7);
-  border-radius: 4px;
+  border-radius: 5px;
   position: relative;
   overflow: hidden;
   margin-top: 3px;
-  border: 1px solid rgba(0, 210, 211, 0.3);
+  border: 1px solid rgba(0, 210, 211, 0.35);
 }
 
 .ffa-player-card .energy-bar-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: 5px;
   background: linear-gradient(90deg, #0abde3, #00d2d3);
   transition: width 0.2s ease;
 }
 
 .ffa-player-card .energy-text {
   position: absolute;
+  left: 0;
+  top: 0;
   width: 100%;
-  text-align: center;
-  top: -2px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: none;
   font-size: 0.52rem;
   font-weight: 800;
   color: #fff;
   text-shadow: 0 1px 2px #000;
+  pointer-events: none;
+  line-height: 1;
 }
 
 .ffa-player-card .hud-stats-row {

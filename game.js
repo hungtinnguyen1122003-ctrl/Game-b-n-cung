@@ -25,20 +25,20 @@ const WEAPONS = [
     name: 'Cung Săn Gỗ Rừng',
     tier: 'A',
     element: 'none',
-    baseDamage: 18,
+    baseDamage: 120,
     speedMultiplier: 1.0,
     special: 'none',
-    desc: 'Cung cơ bản cấp A. Khung gỗ dẻo dai, bắn ổn định không mang nguyên tố.'
+    desc: 'Cung cơ bản cấp A. Khung gỗ dẻo dai, bắn ổn định không mang nguyên tố. Sát thương cơ bản: 120 HP.'
   },
   {
     id: 'bow_a_poison',
     name: 'Cung Cốt Xà Huyết Độc',
     tier: 'A',
     element: 'poison',
-    baseDamage: 16,
+    baseDamage: 110,
     speedMultiplier: 1.0,
     special: 'none',
-    desc: 'Cấp A - Hệ Độc: Cung làm từ xương với nọc độc tím nhỏ giọt. Chạm đất -> bung ra đám mây khí độc màu tím (trừ máu từ từ).'
+    desc: 'Cấp A - Hệ Độc: Nọc độc tím bung khí độc trừ máu liên tục. Sát thương: 110 HP + Độc.'
   },
 
   // Cấp S
@@ -47,30 +47,30 @@ const WEAPONS = [
     name: 'Cung Liệt Hỏa Dung Nham',
     tier: 'S',
     element: 'fire',
-    baseDamage: 24,
+    baseDamage: 180,
     speedMultiplier: 1.15,
     special: 'none',
-    desc: 'Cấp S - Hệ Lửa: Cung rực đỏ, thân cung như dung nham chảy. Chạm đất -> bùng lên đám cháy ngùn ngụt trên mặt đất (đốt cháy mất máu liên tục).'
+    desc: 'Cấp S - Hệ Lửa: Bùng lên biển lửa thiêu đốt đối thủ. Sát thương: 180 HP + Đốt cháy liên tục.'
   },
   {
     id: 'bow_s_water',
     name: 'Cung Thủy Tinh Hải Lưu',
     tier: 'S',
     element: 'water',
-    baseDamage: 22,
+    baseDamage: 165,
     speedMultiplier: 1.1,
     special: 'none',
-    desc: 'Cấp S - Hệ Nước: Cung trong suốt như dòng nước xoáy xanh lam. Chạm đất -> tạo vũng nước xoáy ngầm (làm chậm tốc độ di chuyển).'
+    desc: 'Cấp S - Hệ Nước: Xoáy ngầm làm chậm tốc độ di chuyển 3s. Sát thương: 165 HP + Làm chậm.'
   },
   {
     id: 'bow_s_lightning',
     name: 'Cung Lôi Quang Điện Triệt',
     tier: 'S',
     element: 'lightning',
-    baseDamage: 25,
+    baseDamage: 190,
     speedMultiplier: 1.25,
     special: 'none',
-    desc: 'Cấp S - Hệ Điện: Cung tỏa ánh sáng vàng rực như tia sét. Chạm đất -> tạo vùng tích điện giật tia lửa (choáng 1 giây khi trúng đích).'
+    desc: 'Cấp S - Hệ Điện: Phóng tia sét giật choáng 1s khi trúng đích. Sát thương: 190 HP + Choáng.'
   },
 
   // Cấp SS
@@ -79,30 +79,30 @@ const WEAPONS = [
     name: 'Cung Băng Phách Hàn Băng',
     tier: 'SS',
     element: 'ice',
-    baseDamage: 30,
+    baseDamage: 260,
     speedMultiplier: 1.3,
     special: 'none',
-    desc: 'Cấp SS - Hệ Băng: Cung làm từ các khối băng nhọn sắc lạnh. Chạm đất -> tạo thành một khối băng lớn trên mặt đất (đóng băng ngắt hành động).'
+    desc: 'Cấp SS - Hệ Băng: Khối băng sắc lạnh đóng băng ngắt hành động 1.5s. Sát thương: 260 HP.'
   },
   {
     id: 'bow_ss_wood',
     name: 'Cung Mộc Linh Dây Leo Sống',
     tier: 'SS',
     element: 'wood',
-    baseDamage: 28,
+    baseDamage: 240,
     speedMultiplier: 1.2,
     special: 'none',
-    desc: 'Cấp SS - Hệ Mộc: Cung làm từ dây leo sống có lá phát sáng. Chạm đất -> mọc ra một bụi cây gai góc. Hút máu hồi HP cho người bắn.'
+    desc: 'Cấp SS - Hệ Mộc: Bụi gai hút máu hồi phục HP cho xạ thủ. Sát thương: 240 HP + Hút máu.'
   },
   {
     id: 'bow_ss_wind',
     name: 'Cung Thanh Phong Vũ Dực',
     tier: 'SS',
     element: 'wind',
-    baseDamage: 32,
+    baseDamage: 280,
     speedMultiplier: 1.85,
     special: 'wind_pierce',
-    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng khiến đối thủ bị treo lơ lửng 0.5s! Chạm đất sinh lốc xoáy mở rộng hất tung bất kỳ ai giẫm phải như 1 cú nhảy. Mũi tên bay cực nhanh triệt tiêu gió trời.'
+    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng treo lơ lửng, tạo lốc hất tung đối thủ, bay siêu tốc triệt tiêu gió. Sát thương: 280 HP.'
   },
 
   // Cấp SSS - Vũ khí thần thoại kèm kỹ năng đặc biệt
@@ -111,30 +111,30 @@ const WEAPONS = [
     name: 'Thần Cung Tam Lôi Phân Thân',
     tier: 'SSS',
     element: 'lightning',
-    baseDamage: 38,
+    baseDamage: 350,
     speedMultiplier: 1.45,
     special: 'split_arrow',
-    desc: 'Cấp SSS - Kỹ năng Phân Thân: Tách làm 3 mũi tên sấm sét khi đang bay. Chạm đất sinh vùng điện giật liên hoàn!'
+    desc: 'Cấp SSS - Phân Thân: Tách làm 3 mũi tên sấm sét khi đang bay, chạm đất sinh điện giật. Sát thương: 350 HP.'
   },
   {
     id: 'bow_sss_boomerang',
     name: 'Ngân Nguyệt Hồi Toàn Boomerang',
     tier: 'SSS',
     element: 'fire',
-    baseDamage: 36,
+    baseDamage: 330,
     speedMultiplier: 1.35,
     special: 'boomerang',
-    desc: 'Cấp SSS - Tên Boomerang: Tự động bám đuôi theo dõi kẻ địch gần nhất trong 0.2s đầu sau khi bắn! Sau đó lượn vòng quay ngược lại gây sát thương cả 2 lượt và để lại biển lửa.'
+    desc: 'Cấp SSS - Boomerang: Tự bám đuôi đối thủ 0.2s đầu rồi quay ngược lại gây sát thương 2 lượt và để lại biển lửa. Sát thương: 330 HP.'
   },
   {
     id: 'bow_sss_explosive',
     name: 'Bá Vương Hỏa Pháo Steampunk',
     tier: 'SSS',
     element: 'explosion',
-    baseDamage: 42,
+    baseDamage: 400,
     speedMultiplier: 1.4,
     special: 'none',
-    desc: 'Cấp SSS - Hệ Nổ: Cung thiết kế cơ khí/steampunk gắn thuốc nổ. Chạm đất -> tạo hiệu ứng vụ nổ lan rộng kèm khói bụi mù mịt!'
+    desc: 'Cấp SSS - Hệ Nổ: Pháo cơ khí steampunk tạo vụ nổ cực lớn lan rộng và khói bụi. Sát thương: 400 HP.'
   }
 ];
 
@@ -579,7 +579,7 @@ class AoEZone {
     victims.forEach(v => {
       const dist = Math.hypot(v.x - this.x, (v.y - v.height / 2) - this.y);
       if (dist <= this.radius + 15) {
-        const aoeDmg = 4;
+        const aoeDmg = 35;
         v.hp = Math.max(0, v.hp - aoeDmg);
 
         if (this.element === 'water') v.statusEffects.slow = 2.0;
@@ -590,7 +590,7 @@ class AoEZone {
 
         if (this.element === 'wood') {
           const shooter = game.getCharacterById(this.owner);
-          if (shooter) shooter.heal(3);
+          if (shooter) shooter.heal(30);
         }
 
         const shooter = game.getCharacterById(this.owner);
@@ -880,7 +880,16 @@ class Arrow {
     this.power = power;
     this.weapon = weapon;
 
-    const speed = (280 + (power / 100) * 750) * weapon.speedMultiplier;
+    // Cài đặt lại lực bắn: nếu bấm nút space và thả liền (power <= 3) -> tên rơi tại chỗ!
+    let speed;
+    if (power <= 3) {
+      speed = Math.max(12, power * 5); // Tốc độ chỉ 12-15 px/s -> rơi cắm xuống đất ngay tại chỗ dưới chân
+    } else if (power < 15) {
+      speed = (25 + (power - 3) * 12) * weapon.speedMultiplier;
+    } else {
+      const norm = (power - 15) / 85;
+      speed = (170 + norm * 850) * weapon.speedMultiplier;
+    }
     this.vx = Math.cos(angle) * speed;
     this.vy = Math.sin(angle) * speed;
 
@@ -1239,6 +1248,132 @@ class EnergyPack {
 }
 
 // ============================================================================
+// 7C. TÚI MÙ KỲ BÍ TIẾP TẾ (BLIND BAG SUPPLY DROP)
+// Mở ra ngẫu nhiên: Boom nổ sát thương (33%), Hồi Máu (33%), Hồi Năng Lượng (34%)
+// ============================================================================
+
+class BlindBag {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 38;
+    this.height = 38;
+    this.vy = 55;
+    this.active = true;
+    this.landed = false;
+    this.angle = 0;
+    this.pulse = 0;
+  }
+
+  update(dt, groundY, platforms) {
+    if (!this.active) return;
+    this.pulse += dt * 4;
+    if (!this.landed) {
+      this.y += this.vy * dt;
+      this.angle = Math.sin(Date.now() / 230) * 0.16;
+
+      for (let plat of platforms) {
+        if (plat.type === 'platform' &&
+            this.x + this.width > plat.x && this.x < plat.x + plat.width &&
+            this.y + this.height >= plat.y && this.y + this.height <= plat.y + 20) {
+          this.y = plat.y - this.height;
+          this.landed = true;
+          this.vy = 0;
+          return;
+        }
+      }
+
+      if (this.y + this.height >= groundY) {
+        this.y = groundY - this.height;
+        this.landed = true;
+        this.vy = 0;
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (!this.active) return;
+    ctx.save();
+    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+    ctx.rotate(this.angle);
+
+    // 1. Dù lượn 3 màu rực rỡ khi đang rơi
+    if (!this.landed) {
+      ctx.beginPath();
+      ctx.arc(0, -32, 25, Math.PI, 0, false);
+      const chuteGrad = ctx.createLinearGradient(-25, -32, 25, -32);
+      chuteGrad.addColorStop(0, '#8854d0');
+      chuteGrad.addColorStop(0.5, '#ffd32a');
+      chuteGrad.addColorStop(1, '#ff3838');
+      ctx.fillStyle = chuteGrad;
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Dây dù
+      ctx.beginPath();
+      ctx.moveTo(-22, -32); ctx.lineTo(-10, -12);
+      ctx.moveTo(22, -32); ctx.lineTo(10, -12);
+      ctx.moveTo(0, -32); ctx.lineTo(0, -12);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+    }
+
+    // 2. Hộp Túi Mù nhấp nháy hào quang vàng huyền bí
+    const scale = 1.0 + Math.sin(this.pulse) * 0.05;
+    ctx.scale(scale, scale);
+
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = '#ffd32a';
+
+    const boxGrad = ctx.createLinearGradient(-this.width/2, -this.height/2, this.width/2, this.height/2);
+    boxGrad.addColorStop(0, '#6c5ce7');
+    boxGrad.addColorStop(0.5, '#0984e3');
+    boxGrad.addColorStop(1, '#d63031');
+    ctx.fillStyle = boxGrad;
+
+    // Vẽ hộp bo góc
+    const r = 8;
+    const w = this.width;
+    const h = this.height;
+    ctx.beginPath();
+    ctx.moveTo(-w/2 + r, -h/2);
+    ctx.lineTo(w/2 - r, -h/2);
+    ctx.quadraticCurveTo(w/2, -h/2, w/2, -h/2 + r);
+    ctx.lineTo(w/2, h/2 - r);
+    ctx.quadraticCurveTo(w/2, h/2, w/2 - r, h/2);
+    ctx.lineTo(-w/2 + r, h/2);
+    ctx.quadraticCurveTo(-w/2, h/2, -w/2, h/2 - r);
+    ctx.lineTo(-w/2, -h/2 + r);
+    ctx.quadraticCurveTo(-w/2, -h/2, -w/2 + r, -h/2);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#ffd32a';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Ruy băng quà tặng vàng
+    ctx.fillStyle = '#ffd32a';
+    ctx.fillRect(-w/2, -3, w, 6);
+    ctx.fillRect(-3, -h/2, 6, h);
+
+    // Biểu tượng Dấu Hỏi Chấm Bí Ẩn ❓
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#000000';
+    ctx.font = 'bold 20px "Fredoka One", sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('❓', 0, 1);
+
+    ctx.restore();
+  }
+}
+
+// ============================================================================
 // 8. NHÂN VẬT CHIBI (CHARACTER CLASS) - NHẢY 2 LẦN & HOẠT ẢNH GỤC NGÃ BIẾN MẤT
 // ============================================================================
 
@@ -1490,9 +1625,9 @@ class Character {
   getArrowEnergyCost() {
     const tier = this.weapon ? this.weapon.tier : 'A';
     switch (tier) {
-      case 'SSS': return 5;
-      case 'SS':  return 4;
-      case 'S':   return 3;
+      case 'SSS': return 8;
+      case 'SS':  return 6;
+      case 'S':   return 4;
       case 'A':
       default:    return 2;
     }
@@ -1503,7 +1638,7 @@ class Character {
   }
 
   updateStatusEffects(dt) {
-    // Tự động hồi năng lượng 2 điểm mỗi giây khi còn sống
+    // Tự động hồi năng lượng 3 điểm mỗi giây khi còn sống
     if (this.defeatState === 'ALIVE') {
       this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
     }
@@ -1520,17 +1655,17 @@ class Character {
       let dotDmg = 0;
 
       if (this.statusEffects.burn > 0) {
-        dotDmg += 2.5;
+        dotDmg += 25;
         game.particles.push(new Particle(this.x, this.y - 40, (Math.random()-0.5)*40, -40, '#ff4757', 5, 0.4, 'circle'));
       }
       if (this.statusEffects.poison > 0) {
-        dotDmg += 1.5;
+        dotDmg += 18;
         game.particles.push(new Particle(this.x, this.y - 40, (Math.random()-0.5)*40, -40, '#a55eea', 5, 0.4, 'smoke'));
       }
 
       if (dotDmg > 0) {
         this.hp = Math.max(0, this.hp - dotDmg);
-        game.floatingTexts.push(new FloatingText(this.x, this.y - 70, `-${dotDmg.toFixed(1)}`, '#e74c3c', 16));
+        game.floatingTexts.push(new FloatingText(this.x, this.y - 70, `-${Math.round(dotDmg)}`, '#e74c3c', 16));
         if (this.hp <= 0) {
           this.triggerDefeat();
         }
@@ -1547,11 +1682,11 @@ class Character {
       return;
     }
     this.isCharging = true;
-    this.chargePower = 10;
+    this.chargePower = 0; // Bắt đầu từ 0% để nếu bấm nhả tức thì sẽ có lực cực nhỏ (rơi tại chỗ)
   }
 
-  releaseCharge() {
-    if (!this.isCharging || this.isDead) return;
+  releaseCharge(forcedPower = null) {
+    if ((!this.isCharging && forcedPower === null) || this.isDead) return;
     const cost = this.getArrowEnergyCost();
     if (this.energy < cost) {
       sounds.playNoEnergy();
@@ -1560,7 +1695,7 @@ class Character {
       this.chargePower = 0;
       return;
     }
-    const power = Math.max(15, this.chargePower);
+    const power = forcedPower !== null ? forcedPower : this.chargePower;
     this.isCharging = false;
     this.chargePower = 0;
     this.fireArrow(power);
@@ -1831,50 +1966,6 @@ class Character {
     const headRadius = 15;
     const headY = bodyY - headRadius + 3;
 
-    // THẺ TÊN VÀ THANH MÁU TRÊN ĐẦU (Chỉ hiển thị khi nhân vật còn sống chiến đấu)
-    if (this.defeatState === 'ALIVE') {
-      ctx.save();
-      const tagBaseY = headY - headRadius - 8;
-
-      // 1. Tên người chơi
-      ctx.font = 'bold 11px "Nunito", sans-serif';
-      ctx.textAlign = 'center';
-      const nameText = `[${this.id.toUpperCase()}] ${this.name}`;
-      const nameWidth = ctx.measureText(nameText).width;
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-      ctx.fillRect(this.x - nameWidth / 2 - 4, tagBaseY - 20, nameWidth + 8, 13);
-      ctx.fillStyle = this.color || '#fff';
-      ctx.fillText(nameText, this.x, tagBaseY - 10);
-
-      // 2. Mini HP Bar
-      const hpW = 40;
-      const hpH = 5;
-      const hpX = this.x - hpW / 2;
-      const hpY = tagBaseY - 7;
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillRect(hpX - 1, hpY - 1, hpW + 2, hpH + 2);
-
-      const hpRatio = Math.max(0, this.hp / this.maxHp);
-      let hpColor = '#2ed573';
-      if (hpRatio < 0.3) hpColor = '#ff4757';
-      else if (hpRatio < 0.6) hpColor = '#ffa502';
-
-      ctx.fillStyle = hpColor;
-      ctx.fillRect(hpX, hpY, hpW * hpRatio, hpH);
-
-      // 3. Mini Energy Bar
-      const enY = hpY + hpH + 1;
-      const enH = 3;
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-      ctx.fillRect(hpX - 1, enY - 1, hpW + 2, enH + 2);
-      ctx.fillStyle = '#00d2d3';
-      ctx.fillRect(hpX, enY, hpW * Math.max(0, this.energy / this.maxEnergy), enH);
-
-      ctx.restore();
-    }
-
     ctx.fillStyle = '#f8c291';
     ctx.beginPath();
     ctx.arc(this.x, headY, headRadius, 0, Math.PI * 2);
@@ -1937,29 +2028,7 @@ class Character {
       this.drawElementalBow(ctx, this.x, bodyY + 7);
     }
 
-    // 5. THANH LỰC TỤ
-    if (this.isCharging) {
-      const meterW = 38;
-      const meterH = 6;
-      const meterX = this.x - meterW / 2;
-      const meterY = headY - headRadius - 14;
-
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-      ctx.fillRect(meterX, meterY, meterW, meterH);
-
-      const fillW = (this.chargePower / 100) * meterW;
-      const grad = ctx.createLinearGradient(meterX, 0, meterX + meterW, 0);
-      grad.addColorStop(0, '#2ed573');
-      grad.addColorStop(0.6, '#ffa502');
-      grad.addColorStop(1, '#ff4757');
-      ctx.fillStyle = grad;
-      ctx.fillRect(meterX, meterY, fillW, meterH);
-
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(meterX, meterY, meterW, meterH);
-    }
-
+    // Hiệu ứng Đóng Băng
     if (this.statusEffects.freeze > 0) {
       ctx.fillStyle = 'rgba(112, 161, 255, 0.45)';
       ctx.fillRect(this.x - 18, this.y - currentH - 6, 36, currentH + 10);
@@ -1967,12 +2036,7 @@ class Character {
       ctx.strokeRect(this.x - 18, this.y - currentH - 6, 36, currentH + 10);
     }
 
-    if (this.statusEffects.stun > 0) {
-      const starAng = Date.now() / 200;
-      ctx.font = '14px serif';
-      ctx.fillText('💫', this.x - 7 + Math.cos(starAng) * 11, headY - headRadius - 8);
-    }
-
+    // Hiệu ứng Bay Lơ Lửng gió
     if (this.statusEffects.levitate > 0) {
       const spin = Date.now() / 140;
       ctx.strokeStyle = 'rgba(0, 210, 211, 0.85)';
@@ -1984,6 +2048,98 @@ class Character {
       ctx.beginPath();
       ctx.ellipse(this.x, this.y - 12, 14, 5, -spin, 0, Math.PI * 2);
       ctx.stroke();
+    }
+
+    // =========================================================================
+    // THÔNG SỐ VÀ THẺ TÊN TRÊN ĐẦU (ĐẶT Ở LỚP CAO NHẤT, KHÔNG BỊ CHE LẤP)
+    // =========================================================================
+    if (this.defeatState === 'ALIVE') {
+      ctx.save();
+      const headTop = headY - headRadius - 6; // Đỉnh mũ/đầu
+
+      // 1. Thanh Lực Tụ (khi đang giữ phím Space) - Vẽ ngay sát đỉnh đầu
+      let currentTopY = headTop;
+      if (this.isCharging) {
+        const meterW = 44;
+        const meterH = 6;
+        const meterX = this.x - meterW / 2;
+        const meterY = currentTopY - meterH - 2;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(meterX - 1, meterY - 1, meterW + 2, meterH + 2);
+
+        const fillW = (this.chargePower / 100) * meterW;
+        const grad = ctx.createLinearGradient(meterX, 0, meterX + meterW, 0);
+        grad.addColorStop(0, '#2ed573');
+        grad.addColorStop(0.5, '#ffa502');
+        grad.addColorStop(1, '#ff4757');
+        ctx.fillStyle = grad;
+        ctx.fillRect(meterX, meterY, fillW, meterH);
+
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(meterX - 1, meterY - 1, meterW + 2, meterH + 2);
+
+        currentTopY = meterY - 4;
+      } else {
+        currentTopY = headTop - 3;
+      }
+
+      // 2. Mini Energy Bar (Thanh Năng Lượng)
+      const barW = 46;
+      const barX = this.x - barW / 2;
+      const enH = 4;
+      const enY = currentTopY - enH - 1;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.fillRect(barX - 1, enY - 1, barW + 2, enH + 2);
+      ctx.fillStyle = '#00d2d3';
+      ctx.fillRect(barX, enY, barW * Math.max(0, this.energy / this.maxEnergy), enH);
+
+      // 3. Mini HP Bar (Thanh Máu)
+      const hpH = 7;
+      const hpY = enY - hpH - 2;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.fillRect(barX - 1, hpY - 1, barW + 2, hpH + 2);
+
+      const hpRatio = Math.max(0, this.hp / this.maxHp);
+      let hpColor = '#2ed573';
+      if (hpRatio < 0.3) hpColor = '#ff4757';
+      else if (hpRatio < 0.6) hpColor = '#ffa502';
+      ctx.fillStyle = hpColor;
+      ctx.fillRect(barX, hpY, barW * hpRatio, hpH);
+
+      // Số máu rõ nét trên thanh máu
+      ctx.font = 'bold 7px "Nunito", sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${Math.ceil(this.hp)}`, this.x, hpY + 6);
+
+      // 4. Thẻ Tên Người Chơi (Nameplate Pill)
+      const nameY = hpY - 5;
+      ctx.font = 'bold 11px "Nunito", sans-serif';
+      ctx.textAlign = 'center';
+      const nameText = `[${this.id.toUpperCase()}] ${this.name}`;
+      const nameWidth = ctx.measureText(nameText).width;
+
+      ctx.fillStyle = 'rgba(12, 18, 28, 0.85)';
+      ctx.fillRect(this.x - nameWidth / 2 - 5, nameY - 13, nameWidth + 10, 14);
+      ctx.strokeStyle = this.color || '#fff';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(this.x - nameWidth / 2 - 5, nameY - 13, nameWidth + 10, 14);
+
+      ctx.fillStyle = this.color || '#ffffff';
+      ctx.fillText(nameText, this.x, nameY - 2);
+
+      // 5. Hiệu ứng Choáng (Stun Stars) - Đặt phía trên Thẻ Tên
+      if (this.statusEffects.stun > 0) {
+        const starAng = Date.now() / 200;
+        ctx.font = '14px serif';
+        ctx.fillText('💫', this.x - 7 + Math.cos(starAng) * 11, nameY - 17);
+      }
+
+      ctx.restore();
     }
 
     ctx.restore();
@@ -2318,9 +2474,10 @@ class NetworkManager {
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
           { urls: 'stun:stun4.l.google.com:19302' },
-          // STUN Cloudflare & Twilio
+          // STUN Cloudflare & Twilio & Mozilla
           { urls: 'stun:stun.cloudflare.com:3478' },
           { urls: 'stun:global.stun.twilio.com:3478' },
+          { urls: 'stun:stun.services.mozilla.com' },
           // TURN Server OpenRelay (hỗ trợ chuyển tiếp qua Internet / 4G / Wi-Fi khác nhau)
           {
             urls: 'turn:openrelay.metered.ca:80',
@@ -2336,8 +2493,14 @@ class NetworkManager {
             urls: 'turn:openrelay.metered.ca:443?transport=tcp',
             username: 'openrelayproject',
             credential: 'openrelayproject'
+          },
+          {
+            urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
           }
         ],
+        iceTransportPolicy: 'all',
         iceCandidatePoolSize: 10
       }
     };
@@ -2734,7 +2897,7 @@ class NetworkManager {
         case 'CLIENT_CHARGE_RELEASE': {
           const player = this.game.players.find(p => p.id === msg.fromId);
           if (player && !player.isDead) {
-            player.releaseCharge();
+            player.releaseCharge(msg.power !== undefined ? msg.power : null);
           }
           break;
         }
@@ -3163,7 +3326,8 @@ class InputHandler {
       }
 
       // Giữ Space tụ lực
-      if (e.code === 'Space') {
+      if (e.code === 'Space' && !this.keys['Space_Held']) {
+        this.keys['Space_Held'] = true;
         if (this.game.network.isHost) {
           const myChar = this.game.players.find(p => p.id === 'p1');
           if (myChar && !myChar.isCharging) myChar.startCharge();
@@ -3176,6 +3340,7 @@ class InputHandler {
               this.game.floatingTexts.push(new FloatingText(myChar.x, myChar.y - 65, `⚡ HẾT NĂNG LƯỢNG! (Cần ${cost}⚡)`, '#ffd32a', 18, true));
               return;
             }
+            if (!myChar.isCharging) myChar.startCharge();
           }
           this.game.network.sendToHost({ type: 'CLIENT_CHARGE_START' });
         }
@@ -3191,11 +3356,18 @@ class InputHandler {
 
       // Thả Space để bắn tên
       if (e.code === 'Space') {
+        this.keys['Space_Held'] = false;
         if (this.game.network.isHost) {
           const myChar = this.game.players.find(p => p.id === 'p1');
           if (myChar) myChar.releaseCharge();
         } else if (this.game.network.isClient) {
-          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_RELEASE' });
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          const pwr = myChar ? myChar.chargePower : 0;
+          if (myChar) {
+            myChar.isCharging = false;
+            myChar.chargePower = 0;
+          }
+          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_RELEASE', power: pwr });
         }
       }
     });
@@ -3293,11 +3465,13 @@ class GameManager {
     this.aoeZones = [];
     this.medikits = [];
     this.energyPacks = [];
+    this.blindBags = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
     this.medikitSpawnTimer = 0;
     this.energyPackSpawnTimer = 0;
+    this.blindBagSpawnTimer = 0;
     this.pendingHitEvents = [];
 
     this.network = new NetworkManager(this);
@@ -3379,11 +3553,13 @@ class GameManager {
     this.aoeZones = [];
     this.medikits = [];
     this.energyPacks = [];
+    this.blindBags = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
     this.medikitSpawnTimer = 3;
     this.energyPackSpawnTimer = 5;
+    this.blindBagSpawnTimer = 7;
     this.pendingHitEvents = [];
 
     // Gửi thông báo bắt đầu trận đấu cho tất cả Client
@@ -3422,6 +3598,7 @@ class GameManager {
     this.aoeZones = [];
     this.medikits = [];
     this.energyPacks = [];
+    this.blindBags = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
@@ -3578,6 +3755,27 @@ class GameManager {
     });
     this.energyPacks = this.energyPacks.filter(p => p.active);
 
+    // Sinh Túi Mù Kỳ Bí Tiếp Tế (Blind Bag Supply Drop)
+    this.blindBagSpawnTimer -= dt;
+    if (this.blindBagSpawnTimer <= 0) {
+      const spawnX = 180 + Math.random() * 920;
+      this.blindBags.push(new BlindBag(spawnX, -50));
+      this.blindBagSpawnTimer = 11 + Math.random() * 8;
+    }
+
+    this.blindBags.forEach(bag => {
+      bag.update(dt, this.groundY, this.platforms);
+      if (bag.active) {
+        for (let p of this.players) {
+          if (!p.isDead && p.defeatState === 'ALIVE' && this.checkCollisionBox(p, bag)) {
+            this.openBlindBag(p, bag);
+            break;
+          }
+        }
+      }
+    });
+    this.blindBags = this.blindBags.filter(b => b.active);
+
     // Cập nhật mũi tên
     this.arrows.forEach(arrow => {
       arrow.update(dt, this.wind, this.gravity);
@@ -3607,6 +3805,64 @@ class GameManager {
 
     // Gửi snapshot trạng thái mượt mà cho tất cả Client
     this.broadcastMatchStateSync();
+  }
+
+  // MỞ TÚI MÙ TIẾP TẾ: BOOM SÁT THƯƠNG / HỒI MÁU / HỒI NĂNG LƯỢNG
+  openBlindBag(player, bag) {
+    bag.active = false;
+    const roll = Math.random();
+
+    if (roll < 0.33) {
+      // 1. BOOM NỔ GÂY SÁT THƯƠNG
+      const bombDmg = 250;
+      player.hp = Math.max(0, player.hp - bombDmg);
+      player.vy = -380;
+      player.vx += (Math.random() - 0.5) * 240;
+      sounds.playExplosion();
+
+      this.floatingTexts.push(new FloatingText(player.x, player.y - 65, `💣 BOOM! TÚI MÙ PHÁT NỔ! -${bombDmg} HP`, '#ff4757', 22, true));
+      for (let i = 0; i < 35; i++) {
+        this.particles.push(new Particle(
+          bag.x + bag.width / 2, bag.y + bag.height / 2,
+          (Math.random() - 0.5) * 260,
+          (Math.random() - 0.5) * 260 - 40,
+          i % 2 === 0 ? '#ff4757' : '#ffa502', 5.5, 0.5, 'spark'
+        ));
+      }
+      this.particles.push(new Particle(bag.x + bag.width / 2, bag.y + bag.height / 2, 0, 0, '#ffffff', 1, 0.45, 'shockwave'));
+
+      if (player.hp <= 0) {
+        player.triggerDefeat();
+      }
+    } else if (roll < 0.66) {
+      // 2. HỒI MÁU THẦN TỐC
+      const healAmt = 300;
+      player.heal(healAmt);
+      sounds.playHeal();
+      this.floatingTexts.push(new FloatingText(player.x, player.y - 65, `💖 TÚI MÙ: HỒI +${healAmt} MÁU!`, '#2ed573', 22, true));
+      for (let i = 0; i < 20; i++) {
+        this.particles.push(new Particle(
+          player.x, player.y - 25,
+          (Math.random() - 0.5) * 110,
+          (Math.random() - 0.5) * 110 - 25,
+          '#2ed573', 4.5, 0.5, 'spark'
+        ));
+      }
+    } else {
+      // 3. HỒI NĂNG LƯỢNG ĐẦY BÌNH
+      const energyAmt = 60;
+      player.addEnergy(energyAmt);
+      sounds.playEnergyPickup();
+      this.floatingTexts.push(new FloatingText(player.x, player.y - 65, `⚡ TÚI MÙ: HỒI +${energyAmt} NĂNG LƯỢNG!`, '#00d2d3', 22, true));
+      for (let i = 0; i < 20; i++) {
+        this.particles.push(new Particle(
+          player.x, player.y - 25,
+          (Math.random() - 0.5) * 110,
+          (Math.random() - 0.5) * 110 - 25,
+          '#00d2d3', 4.5, 0.5, 'spark'
+        ));
+      }
+    }
   }
 
   updateBotAIs(dt) {
@@ -3942,6 +4198,11 @@ class GameManager {
         x: e.x,
         y: e.y,
         active: e.active
+      })),
+      blindBags: this.blindBags.map(b => ({
+        x: b.x,
+        y: b.y,
+        active: b.active
       }))
     });
   }
@@ -4073,6 +4334,14 @@ class GameManager {
       });
     }
 
+    if (msg.blindBags) {
+      this.blindBags = msg.blindBags.map(b => {
+        const bag = new BlindBag(b.x, b.y);
+        bag.active = b.active;
+        return bag;
+      });
+    }
+
     this.updateCombatHUD();
   }
 
@@ -4166,6 +4435,7 @@ class GameManager {
       this.aoeZones.forEach(z => z.draw(ctx));
       this.medikits.forEach(box => box.draw(ctx));
       this.energyPacks.forEach(pack => pack.draw(ctx));
+      this.blindBags.forEach(bag => bag.draw(ctx));
 
       // Vẽ tất cả người chơi trong trận hỗn chiến
       this.players.forEach(p => p.draw(ctx));
