@@ -161,17 +161,17 @@
                 <div class="map-card active" data-map="jungle">
                   <div class="map-card-badge">🌳 THUNG LŨNG</div>
                   <div class="map-card-name">Thung Lũng Cổ Thụ</div>
-                  <div class="map-card-desc">Bục quan sát 2 đầu, thung lũng thoáng ở giữa, 5 bục đứng đối xứng.</div>
+                  <div class="map-card-desc">Sàn đất bằng phẳng vững chắc, 5 bục quan sát đối xứng, thung lũng thoáng đãng.</div>
                 </div>
                 <div class="map-card" data-map="volcano">
-                  <div class="map-card-badge">🌋 VỰC THẲM</div>
+                  <div class="map-card-badge">🌋 VÙNG NÚI LỬA</div>
                   <div class="map-card-name">Vực Sâu Dung Nham</div>
-                  <div class="map-card-desc">Bục đá ziczac lơ lửng, không có vật cản che khuất, thử thách tính gió.</div>
+                  <div class="map-card-desc">Sàn đá bazan liền mạch, bục đá ziczac lơ lửng, không có hố tử thần, thử thách tính gió.</div>
                 </div>
                 <div class="map-card" data-map="icecave">
                   <div class="map-card-badge">❄️ ĐỒI BĂNG</div>
                   <div class="map-card-name">Đồi Tuyết Vô Tận</div>
-                  <div class="map-card-desc">Gò đồi tuyết uốn lượn thoải dài, khoảng trống bao la bắn tầm xa cực đã.</div>
+                  <div class="map-card-desc">Sàn tuyết vĩnh cửu bằng phẳng, các tầng băng trôi lơ lửng, bắn tầm xa cực đã.</div>
                 </div>
               </div>
             </div>
@@ -181,8 +181,15 @@
           <div class="lobby-col-right">
             <div class="room-members-panel">
               <div class="panel-header">
-                <h3>👥 PHÒNG CHỜ HỖN CHIẾN (TỐI ĐA 5 NGƯỜI)</h3>
-                <span class="room-info-hint" id="room-info-hint">Tất cả Client phải bấm "Sẵn Sàng" thì Host mới được Bắt Đầu</span>
+                <div>
+                  <h3>👥 PHÒNG CHỜ HỖN CHIẾN (TỐI ĐA 5 NGƯỜI)</h3>
+                  <span class="room-info-hint" id="room-info-hint">Tất cả Client phải bấm "Sẵn Sàng" thì Host mới được Bắt Đầu</span>
+                </div>
+                <!-- Nút điều khiển Bot AI dành cho Host -->
+                <div class="bot-control-buttons" id="bot-control-buttons">
+                  <button type="button" id="btn-add-bot" class="btn-sm-action btn-add-bot">🤖 + Thêm Bot</button>
+                  <button type="button" id="btn-remove-bot" class="btn-sm-action btn-danger">🗑️ - Xóa Bot</button>
+                </div>
               </div>
 
               <!-- 5 Slot hiển thị trạng thái và thông tin của 5 người chơi -->

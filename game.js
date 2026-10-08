@@ -177,6 +177,7 @@ const MAP_CONFIGS = {
     groundColor: '#1e272e',
     groundTopColor: '#2ed573',
     flowerColor: '#ff4757',
+    pits: [],
     spawns: [
       { x: 135, y: 520, facing: true },
       { x: 1145, y: 520, facing: false },
@@ -205,6 +206,7 @@ const MAP_CONFIGS = {
     groundColor: '#1e272e',
     groundTopColor: '#e74c3c',
     flowerColor: '#f39c12',
+    pits: [],
     spawns: [
       { x: 155, y: 530, facing: true },
       { x: 1125, y: 530, facing: false },
@@ -230,6 +232,7 @@ const MAP_CONFIGS = {
     groundColor: '#0a3d62',
     groundTopColor: '#78e08f',
     flowerColor: '#dff9fb',
+    pits: [],
     spawns: [
       { x: 145, y: 480, facing: true },
       { x: 1130, y: 490, facing: false },
@@ -404,6 +407,57 @@ class SoundManager {
     } catch(e) {}
   }
 
+  playPitFall() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(450, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.7);
+      gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.7);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.7);
+    } catch(e) {}
+  }
+
+  playNoEnergy() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(110, this.ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.18);
+    } catch(e) {}
+  }
+
+  playEnergyPickup() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1040, this.ctx.currentTime + 0.22);
+      gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.22);
+    } catch(e) {}
+  }
+
   playVictory() {
     if (!this.enabled || !this.ctx) return;
     try {
@@ -490,16 +544,9 @@ class AoEZone {
 
     // Nếu là lốc xoáy hệ Gió: Kiểm tra tức thì khi có đối thủ đạp trúng vùng hiệu ứng mở rộng -> hất bay lên như 1 lần nhảy
     if (this.element === 'wind') {
-      const victims = [];
-      if (this.owner === 'p1') {
-        if (game.gameMode === 'vs-ai') victims.push(...game.bots);
-        else if (game.player2) victims.push(game.player2);
-      } else {
-        victims.push(game.player1);
-      }
+      const victims = (game.players || []).filter(p => p && p.id !== this.owner && !p.isDead && p.defeatState === 'ALIVE');
 
       victims.forEach(v => {
-        if (!v || v.isDead) return;
         const distX = Math.abs(v.x - this.x);
         const distY = Math.abs(v.y - this.y);
         // Đạp trúng hoặc đi vào vùng lốc xoáy
@@ -527,30 +574,28 @@ class AoEZone {
   }
 
   checkVictims() {
-    const victims = [];
-    if (this.owner === 'p1') {
-      if (game.gameMode === 'vs-ai') victims.push(...game.bots);
-      else if (game.player2) victims.push(game.player2);
-    } else {
-      victims.push(game.player1);
-    }
+    const victims = (game.players || []).filter(p => p && p.id !== this.owner && !p.isDead && p.defeatState === 'ALIVE');
 
     victims.forEach(v => {
-      if (!v || v.isDead) return;
       const dist = Math.hypot(v.x - this.x, (v.y - v.height / 2) - this.y);
       if (dist <= this.radius + 15) {
-        const aoeDmg = 3;
+        const aoeDmg = 4;
         v.hp = Math.max(0, v.hp - aoeDmg);
 
-        if (this.element === 'water') v.statusEffects.slow = 1.5;
-        if (this.element === 'poison') v.statusEffects.poison = 2.0;
-        if (this.element === 'fire') v.statusEffects.burn = 2.0;
-        if (this.element === 'ice') v.statusEffects.freeze = 0.8;
-        if (this.element === 'lightning') v.statusEffects.stun = 0.5;
+        if (this.element === 'water') v.statusEffects.slow = 2.0;
+        if (this.element === 'poison') v.statusEffects.poison = 3.0;
+        if (this.element === 'fire') v.statusEffects.burn = 3.0;
+        if (this.element === 'ice') v.statusEffects.freeze = 1.0;
+        if (this.element === 'lightning') v.statusEffects.stun = 0.6;
 
         if (this.element === 'wood') {
           const shooter = game.getCharacterById(this.owner);
-          if (shooter) shooter.heal(2);
+          if (shooter) shooter.heal(3);
+        }
+
+        const shooter = game.getCharacterById(this.owner);
+        if (shooter) {
+          shooter.totalDamageDealt += aoeDmg;
         }
 
         game.floatingTexts.push(new FloatingText(v.x, v.y - 65, `-${aoeDmg}`, '#ff9f43', 15));
@@ -866,9 +911,7 @@ class Arrow {
     if (this.isBoomerang && this.flightTime <= 0.2) {
       let nearestTarget = null;
       let minDist = Infinity;
-      const targets = this.owner === 'p1'
-        ? (game.gameMode === 'vs-ai' ? game.bots : [game.player2])
-        : [game.player1];
+      const targets = (game.players || []).filter(p => p && p.id !== this.owner && !p.isDead && p.defeatState === 'ALIVE');
 
       for (let t of targets) {
         if (t && !t.isDead) {
@@ -1105,6 +1148,97 @@ class Medikit {
 }
 
 // ============================================================================
+// 7B. GÓI NĂNG LƯỢNG TIẾP TẾ (ENERGY PACK SUPPLY DROP)
+// ============================================================================
+
+class EnergyPack {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.width = 36;
+    this.height = 36;
+    this.vy = 65;
+    this.active = true;
+    this.landed = false;
+    this.angle = 0;
+    this.energyAmount = 35;
+  }
+
+  update(dt, groundY, platforms) {
+    if (!this.active) return;
+    if (!this.landed) {
+      this.y += this.vy * dt;
+      this.angle = Math.sin(Date.now() / 250) * 0.15;
+
+      for (let plat of platforms) {
+        if (plat.type === 'platform' &&
+            this.x + this.width > plat.x && this.x < plat.x + plat.width &&
+            this.y + this.height >= plat.y && this.y + this.height <= plat.y + 20) {
+          this.y = plat.y - this.height;
+          this.landed = true;
+          this.vy = 0;
+          return;
+        }
+      }
+
+      if (!game || !game.isPit(this.x + this.width / 2)) {
+        if (this.y + this.height >= groundY) {
+          this.y = groundY - this.height;
+          this.landed = true;
+          this.vy = 0;
+        }
+      } else {
+        if (this.y > 750) this.active = false;
+      }
+    }
+  }
+
+  draw(ctx) {
+    if (!this.active) return;
+    ctx.save();
+    ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+    ctx.rotate(this.angle);
+
+    if (!this.landed) {
+      // Dù màu Cyan neon phát sáng
+      ctx.beginPath();
+      ctx.arc(0, -32, 24, Math.PI, 0, false);
+      ctx.fillStyle = '#00d2d3';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(-22, -32); ctx.lineTo(-10, -10);
+      ctx.moveTo(22, -32); ctx.lineTo(10, -10);
+      ctx.moveTo(0, -32); ctx.lineTo(0, -10);
+      ctx.stroke();
+    }
+
+    // Khối năng lượng pin công nghệ cao
+    ctx.fillStyle = '#0c2461';
+    ctx.fillRect(-this.width / 2, -this.height / 2, this.width, this.height);
+    ctx.strokeStyle = '#00d2d3';
+    ctx.lineWidth = 2.5;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = '#00d2d3';
+    ctx.strokeRect(-this.width / 2, -this.height / 2, this.width, this.height);
+
+    // Ký hiệu tia sét ⚡ phát sáng vàng
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = '#ffd32a';
+    ctx.fillStyle = '#ffd32a';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚡', 0, 1);
+
+    ctx.restore();
+  }
+}
+
+// ============================================================================
 // 8. NHÂN VẬT CHIBI (CHARACTER CLASS) - NHẢY 2 LẦN & HOẠT ẢNH GỤC NGÃ BIẾN MẤT
 // ============================================================================
 
@@ -1122,6 +1256,11 @@ class Character {
     this.maxHp = 100;
     this.hp = 100;
     this.isDead = false;
+
+    // HỆ THỐNG NĂNG LƯỢNG (ENERGY SYSTEM)
+    this.maxEnergy = 100;
+    this.energy = 100;
+    this.energyRegenRate = 2; // +2 năng lượng mỗi giây
 
     // Cơ chế gục ngã (Defeat Animation)
     this.defeatState = 'ALIVE'; // 'ALIVE', 'COLLAPSING', 'DISAPPEARED'
@@ -1166,10 +1305,13 @@ class Character {
     this.shotsFired = 0;
     this.hitsLanded = 0;
     this.hurtTimer = 0;
+
+    this.isBot = false;
+    this.botAiState = null;
   }
 
   getHitboxes() {
-    if (this.isDead) {
+    if (this.isDead || this.defeatState !== 'ALIVE') {
       return {
         head: { x: -9999, y: -9999, width: 0, height: 0 },
         body: { x: -9999, y: -9999, width: 0, height: 0 },
@@ -1192,20 +1334,25 @@ class Character {
 
   // KÍCH HOẠT HIỆU ỨNG GỤC NGÃ KHI HẾT MÁU
   triggerDefeat() {
-    if (this.isDead) return;
+    if (this.isDead || this.defeatState !== 'ALIVE') return;
     this.isDead = true;
+    this.hp = 0;
     this.defeatState = 'COLLAPSING';
     this.defeatTimer = 2.4; // Thời gian hiệu ứng gục ngã trước khi biến mất
+    this.collapseAngle = 0;
+    this.deathOpacity = 1.0;
     sounds.playDefeatSound();
 
     // Hồn ma chibi bay lên trời
     game.particles.push(new Particle(this.x, this.y - 28, 0, -45, '#ffffff', 8, 2.0, 'ghost'));
 
-    // Chữ bay B.O.T Defeated
-    game.floatingTexts.push(new FloatingText(this.x, this.y - 60, `☠️ ${this.name} GỤC NGÃ!`, '#ff4757', 20, true));
+    // Chữ bay Defeated
+    game.floatingTexts.push(new FloatingText(this.x, this.y - 60, `☠️ ${this.name} GỤC NGÃ!`, '#ff4757', 22, true));
 
-    // Kiểm tra xem trận đấu đã ngã ngũ chưa
-    game.checkGameOver();
+    // Kiểm tra kết thúc trận đấu nếu chỉ còn 1 người sống sót
+    if (game.checkFFAWinCondition) {
+      game.checkFFAWinCondition();
+    }
   }
 
   update(dt, groundY, platforms) {
@@ -1311,6 +1458,7 @@ class Character {
       }
     }
 
+    // Sàn đất liền vững chắc trải dài toàn bộ bản đồ (Hố đã được xóa hoàn toàn)
     if (this.y >= groundY) {
       this.y = groundY;
       this.vy = 0;
@@ -1323,7 +1471,43 @@ class Character {
     if (this.x > 1280 - halfW - 20) this.x = 1280 - halfW - 20;
   }
 
+  fallIntoPit() {
+    if (this.isDead) return;
+    this.hp = 0;
+    this.triggerDefeat();
+    sounds.playPitFall();
+    game.floatingTexts.push(new FloatingText(this.x, 620, '💀 RƠI XUỐNG VỰC SÂU!', '#ff3838', 24, true));
+    for (let i = 0; i < 25; i++) {
+      game.particles.push(new Particle(
+        this.x, 650,
+        (Math.random() - 0.5) * 140,
+        -Math.random() * 120 - 40,
+        '#ff4757', 5, 0.6, 'smoke'
+      ));
+    }
+  }
+
+  getArrowEnergyCost() {
+    const tier = this.weapon ? this.weapon.tier : 'A';
+    switch (tier) {
+      case 'SSS': return 5;
+      case 'SS':  return 4;
+      case 'S':   return 3;
+      case 'A':
+      default:    return 2;
+    }
+  }
+
+  addEnergy(amount) {
+    this.energy = Math.min(this.maxEnergy, this.energy + amount);
+  }
+
   updateStatusEffects(dt) {
+    // Tự động hồi năng lượng 2 điểm mỗi giây khi còn sống
+    if (this.defeatState === 'ALIVE') {
+      this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
+    }
+
     for (let key in this.statusEffects) {
       if (this.statusEffects[key] > 0) {
         this.statusEffects[key] -= dt;
@@ -1356,12 +1540,26 @@ class Character {
 
   startCharge() {
     if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.isDead) return;
+    const cost = this.getArrowEnergyCost();
+    if (this.energy < cost) {
+      sounds.playNoEnergy();
+      game.floatingTexts.push(new FloatingText(this.x, this.y - 65, `⚡ HẾT NĂNG LƯỢNG! (Cần ${cost}⚡)`, '#ffd32a', 18, true));
+      return;
+    }
     this.isCharging = true;
     this.chargePower = 10;
   }
 
   releaseCharge() {
     if (!this.isCharging || this.isDead) return;
+    const cost = this.getArrowEnergyCost();
+    if (this.energy < cost) {
+      sounds.playNoEnergy();
+      game.floatingTexts.push(new FloatingText(this.x, this.y - 65, `⚡ HẾT NĂNG LƯỢNG! (Cần ${cost}⚡)`, '#ffd32a', 18, true));
+      this.isCharging = false;
+      this.chargePower = 0;
+      return;
+    }
     const power = Math.max(15, this.chargePower);
     this.isCharging = false;
     this.chargePower = 0;
@@ -1369,6 +1567,13 @@ class Character {
   }
 
   fireArrow(power) {
+    const cost = this.getArrowEnergyCost();
+    if (this.energy < cost) {
+      sounds.playNoEnergy();
+      return;
+    }
+    this.energy = Math.max(0, this.energy - cost);
+
     this.shotsFired++;
     sounds.playShoot(this.weapon.element);
 
@@ -1421,53 +1626,72 @@ class Character {
     if (this.facingRight === toRight || this.isDead) return;
     this.facingRight = toRight;
     // Lật góc nhắm đối xứng gương qua trục thẳng đứng Y:
-    // angle' = -Math.PI - angle  (hoặc Math.atan2(sin, -cos))
     const sinA = Math.sin(this.aimAngle);
     const cosA = Math.cos(this.aimAngle);
     this.aimAngle = Math.atan2(sinA, -cosA);
   }
 
   takeDamage(arrow, hitboxName) {
-    if (this.isDead) return;
-    this.hurtTimer = 0.2;
+    if (this.isDead || this.defeatState !== 'ALIVE') return;
+    this.hurtTimer = 0.25;
+
+    // Đẩy lùi (Knockback) nhẹ khi trúng đạn
+    this.vx += Math.cos(arrow.angle) * 75;
+    this.vy -= 40;
 
     let multiplier = 1.0;
     let defPercent = 0;
 
     if (hitboxName === 'head') {
       multiplier = 2.0;
-      defPercent = this.helmet.defPercent;
+      defPercent = this.helmet ? this.helmet.defPercent : 0;
     } else if (hitboxName === 'body') {
       multiplier = 1.0;
-      defPercent = this.chest.defPercent;
+      defPercent = this.chest ? this.chest.defPercent : 0;
     } else {
       multiplier = 0.5;
-      defPercent = this.boots.defPercent;
+      defPercent = this.boots ? this.boots.defPercent : 0;
     }
 
-    const rawDamage = arrow.weapon.baseDamage * multiplier;
-    const actualDamage = Math.max(3, rawDamage * (1 - defPercent / 100));
+    const rawDamage = (arrow.weapon ? arrow.weapon.baseDamage : 20) * multiplier;
+    const actualDamage = Math.max(3, Math.round(rawDamage * (1 - (defPercent || 0) / 100)));
     this.hp = Math.max(0, this.hp - actualDamage);
 
-    const shooter = game.getCharacterById(arrow.owner);
+    const shooter = game && game.getCharacterById ? game.getCharacterById(arrow.owner) : null;
     if (shooter) {
-      shooter.totalDamageDealt += Math.round(actualDamage);
+      shooter.totalDamageDealt += actualDamage;
       shooter.hitsLanded++;
 
-      if (arrow.weapon.element === 'wood') {
-        const healAmt = Math.round(actualDamage * 0.5);
+      if (arrow.weapon && arrow.weapon.element === 'wood') {
+        const healAmt = Math.round(actualDamage * 0.4);
         shooter.heal(healAmt);
         game.floatingTexts.push(new FloatingText(shooter.x, shooter.y - 70, `+${healAmt} HP (Hút Máu)`, '#2ed573', 20));
       }
     }
 
-    this.applyElementalEffect(arrow.weapon.element);
+    if (arrow.weapon) {
+      this.applyElementalEffect(arrow.weapon.element);
+    }
     sounds.playHit(hitboxName);
 
     const isCrit = hitboxName === 'head';
     const textPrefix = isCrit ? '💥 CRIT! -' : '-';
     const textColor = isCrit ? '#ff4757' : (hitboxName === 'body' ? '#ffa502' : '#f1f2f6');
-    game.floatingTexts.push(new FloatingText(this.x, this.y - 48, `${textPrefix}${Math.round(actualDamage)}`, textColor, isCrit ? 24 : 18, isCrit));
+    game.floatingTexts.push(new FloatingText(this.x, this.y - 48, `${textPrefix}${actualDamage}`, textColor, isCrit ? 24 : 18, isCrit));
+
+    // Ghi nhận sự kiện trúng đạn để phát sóng đồng bộ cho toàn bộ phòng
+    if (game && game.recordHitEvent) {
+      game.recordHitEvent({
+        targetId: this.id,
+        shooterId: arrow.owner,
+        hitbox: hitboxName,
+        damage: actualDamage,
+        isCrit: isCrit,
+        element: arrow.weapon ? arrow.weapon.element : 'none',
+        x: this.x,
+        y: this.y - 35
+      });
+    }
 
     for (let i = 0; i < 15; i++) {
       game.particles.push(new Particle(
@@ -1607,22 +1831,47 @@ class Character {
     const headRadius = 15;
     const headY = bodyY - headRadius + 3;
 
-    // THẺ TÊN VÀ THANH MÁU TRÊN ĐẦU
-    if (this.defeatState !== 'DISAPPEARED') {
+    // THẺ TÊN VÀ THANH MÁU TRÊN ĐẦU (Chỉ hiển thị khi nhân vật còn sống chiến đấu)
+    if (this.defeatState === 'ALIVE') {
       ctx.save();
-      ctx.font = 'bold 11px Nunito, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = this.color;
-      ctx.shadowBlur = 4;
-      ctx.shadowColor = 'rgba(0,0,0,0.85)';
-      ctx.fillText(`[${this.id.toUpperCase()}] ${this.name}`, this.x, headY - headRadius - 12);
+      const tagBaseY = headY - headRadius - 8;
 
-      const hpW = 34;
-      const hpH = 4;
+      // 1. Tên người chơi
+      ctx.font = 'bold 11px "Nunito", sans-serif';
+      ctx.textAlign = 'center';
+      const nameText = `[${this.id.toUpperCase()}] ${this.name}`;
+      const nameWidth = ctx.measureText(nameText).width;
+
       ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-      ctx.fillRect(this.x - hpW / 2, headY - headRadius - 8, hpW, hpH);
-      ctx.fillStyle = this.color;
-      ctx.fillRect(this.x - hpW / 2, headY - headRadius - 8, hpW * Math.max(0, this.hp / this.maxHp), hpH);
+      ctx.fillRect(this.x - nameWidth / 2 - 4, tagBaseY - 20, nameWidth + 8, 13);
+      ctx.fillStyle = this.color || '#fff';
+      ctx.fillText(nameText, this.x, tagBaseY - 10);
+
+      // 2. Mini HP Bar
+      const hpW = 40;
+      const hpH = 5;
+      const hpX = this.x - hpW / 2;
+      const hpY = tagBaseY - 7;
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(hpX - 1, hpY - 1, hpW + 2, hpH + 2);
+
+      const hpRatio = Math.max(0, this.hp / this.maxHp);
+      let hpColor = '#2ed573';
+      if (hpRatio < 0.3) hpColor = '#ff4757';
+      else if (hpRatio < 0.6) hpColor = '#ffa502';
+
+      ctx.fillStyle = hpColor;
+      ctx.fillRect(hpX, hpY, hpW * hpRatio, hpH);
+
+      // 3. Mini Energy Bar
+      const enY = hpY + hpH + 1;
+      const enH = 3;
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(hpX - 1, enY - 1, hpW + 2, enH + 2);
+      ctx.fillStyle = '#00d2d3';
+      ctx.fillRect(hpX, enY, hpW * Math.max(0, this.energy / this.maxEnergy), enH);
+
       ctx.restore();
     }
 
@@ -1950,6 +2199,10 @@ class NetworkManager {
     }
 
     if (joinInput) {
+      joinInput.addEventListener('input', () => {
+        joinInput.value = joinInput.value.toUpperCase();
+      });
+
       joinInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           sounds.init();
@@ -1978,6 +2231,21 @@ class NetworkManager {
 
     if (btnReady) {
       btnReady.addEventListener('click', () => this.toggleReady());
+    }
+
+    const btnAddBot = document.getElementById('btn-add-bot');
+    const btnRemoveBot = document.getElementById('btn-remove-bot');
+    if (btnAddBot) {
+      btnAddBot.addEventListener('click', () => {
+        sounds.init();
+        this.addBot();
+      });
+    }
+    if (btnRemoveBot) {
+      btnRemoveBot.addEventListener('click', () => {
+        sounds.init();
+        this.removeBot();
+      });
     }
   }
 
@@ -2401,6 +2669,63 @@ class NetworkManager {
     });
   }
 
+  addBot() {
+    if (!this.isHost) {
+      alert('Chỉ Chủ Phòng (Host) mới có thể thêm Bot!');
+      return;
+    }
+    const botId = this.getNextAvailableId();
+    if (!botId) {
+      alert('Phòng đã đầy tối đa 5 người chơi!');
+      return;
+    }
+
+    const botNames = ['Bot Thiện Xạ', 'Bot Hỏa Long', 'Bot Băng Thần', 'Bot Lôi Thần', 'Bot Sát Thủ'];
+    const botName = `🤖 ${botNames[Math.floor(Math.random() * botNames.length)]} (${botId.toUpperCase()})`;
+    const randomW = WEAPONS[Math.floor(Math.random() * WEAPONS.length)];
+    const randomH = ARMORS.helmet[Math.floor(Math.random() * ARMORS.helmet.length)];
+    const randomC = ARMORS.chest[Math.floor(Math.random() * ARMORS.chest.length)];
+    const randomB = ARMORS.boots[Math.floor(Math.random() * ARMORS.boots.length)];
+
+    this.clients.set(botId, {
+      conn: null,
+      id: botId,
+      name: botName,
+      isBot: true,
+      isReady: true,
+      equip: {
+        weaponId: randomW.id,
+        helmId: randomH.id,
+        chestId: randomC.id,
+        bootsId: randomB.id
+      }
+    });
+
+    this.broadcastToClients({
+      type: 'ROOM_PLAYERS_UPDATE',
+      mapId: this.game.currentMapId,
+      roomPlayers: this.getRoomPlayersList()
+    });
+    this.updateLobbyRoomUI();
+  }
+
+  removeBot() {
+    if (!this.isHost) return;
+    let lastBotId = null;
+    for (let [id, c] of this.clients.entries()) {
+      if (c.isBot) lastBotId = id;
+    }
+    if (lastBotId) {
+      this.clients.delete(lastBotId);
+      this.broadcastToClients({
+        type: 'ROOM_PLAYERS_UPDATE',
+        mapId: this.game.currentMapId,
+        roomPlayers: this.getRoomPlayersList()
+      });
+      this.updateLobbyRoomUI();
+    }
+  }
+
   getRoomPlayersList() {
     const list = [
       {
@@ -2408,6 +2733,7 @@ class NetworkManager {
         name: this.isHost ? (this.myNickname || 'Chủ Phòng') : 'Chủ Phòng',
         isHost: true,
         isReady: true,
+        isBot: false,
         color: PLAYER_COLORS.p1,
         equip: this.isHost ? this.getMyEquip() : { weaponId: 'bow_sss_split', helmId: 'helm_sss', chestId: 'chest_sss', bootsId: 'boots_sss' }
       }
@@ -2420,6 +2746,7 @@ class NetworkManager {
           name: client.name,
           isHost: false,
           isReady: !!client.isReady,
+          isBot: !!client.isBot,
           color: PLAYER_COLORS[id] || '#ffa502',
           equip: client.equip
         });
@@ -2448,8 +2775,8 @@ class NetworkManager {
       const allReady = clientCount >= 1 && Array.from(this.clients.values()).every(c => c.isReady);
 
       if (clientCount < 1) {
-        startBtn.disabled = true;
-        startBtn.innerText = '⏳ Cần ít nhất 2 người chơi để bắt đầu (1/5)';
+        startBtn.disabled = false;
+        startBtn.innerText = '⚡ BẮT ĐẦU LUYỆN TẬP (HOẶC THÊM BOT / CHỜ BẠN)';
       } else if (!allReady) {
         const unreadyCount = Array.from(this.clients.values()).filter(c => !c.isReady).length;
         startBtn.disabled = true;
@@ -2478,6 +2805,7 @@ class NetworkManager {
 
       if (p) {
         const weaponObj = WEAPONS.find(w => w.id === (p.equip && p.equip.weaponId)) || WEAPONS[0];
+        const roleText = p.isHost ? '👑 Host' : (p.isBot ? '🤖 Bot AI' : '🎮 Client');
         card.innerHTML = `
           <div class="slot-left">
             <div class="slot-avatar" style="background: ${p.color};">
@@ -2486,13 +2814,13 @@ class NetworkManager {
             <div class="slot-info">
               <div class="slot-name-row">
                 <span class="slot-name">${p.name}</span>
-                <span class="slot-role-tag ${p.isHost ? 'host' : ''}">${p.isHost ? '👑 Host' : '🎮 Client'}</span>
+                <span class="slot-role-tag ${p.isHost ? 'host' : ''}">${roleText}</span>
               </div>
               <span class="slot-equip-text">🏹 [${weaponObj.tier}] ${weaponObj.name}</span>
             </div>
           </div>
           <div class="slot-status-badge ${p.isReady ? 'ready' : 'unready'}">
-            ${p.isHost ? '👑 Sẵn Sàng (Host)' : (p.isReady ? '🟢 Đã Sẵn Sàng' : '⏳ Đang Chọn Đồ...')}
+            ${p.isHost ? '👑 Sẵn Sàng (Host)' : (p.isBot ? '🟢 Sẵn Sàng (Bot)' : (p.isReady ? '🟢 Đã Sẵn Sàng' : '⏳ Đang Chọn Đồ...'))}
           </div>
         `;
       } else {
@@ -2658,6 +2986,15 @@ class InputHandler {
           const myChar = this.game.players.find(p => p.id === 'p1');
           if (myChar && !myChar.isCharging) myChar.startCharge();
         } else if (this.game.network.isClient) {
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          if (myChar) {
+            const cost = myChar.getArrowEnergyCost();
+            if (myChar.energy < cost) {
+              sounds.playNoEnergy();
+              this.game.floatingTexts.push(new FloatingText(myChar.x, myChar.y - 65, `⚡ HẾT NĂNG LƯỢNG! (Cần ${cost}⚡)`, '#ffd32a', 18, true));
+              return;
+            }
+          }
           this.game.network.sendToHost({ type: 'CLIENT_CHARGE_START' });
         }
       }
@@ -2769,13 +3106,17 @@ class GameManager {
     this.players = [];
 
     this.platforms = [];
+    this.pits = [];
     this.arrows = [];
     this.aoeZones = [];
     this.medikits = [];
+    this.energyPacks = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
     this.medikitSpawnTimer = 0;
+    this.energyPackSpawnTimer = 0;
+    this.pendingHitEvents = [];
 
     this.network = new NetworkManager(this);
     this.input = new InputHandler(this);
@@ -2797,6 +3138,24 @@ class GameManager {
     this.currentMapId = mapId;
     const cfg = MAP_CONFIGS[mapId] || MAP_CONFIGS.jungle;
     this.platforms = cfg.platforms.map(p => ({ ...p }));
+    this.pits = cfg.pits ? cfg.pits.map(p => ({ ...p })) : [];
+  }
+
+  isPit(x) {
+    return false; // Hố đã được xóa hoàn toàn khỏi trò chơi
+  }
+
+  getCharacterById(id) {
+    if (!this.players) return null;
+    return this.players.find(p => p.id === id) || null;
+  }
+
+  checkGameOver() {
+    this.checkFFAWinCondition();
+  }
+
+  recordHitEvent(evt) {
+    this.pendingHitEvents.push(evt);
   }
 
   changeWind() {
@@ -2820,9 +3179,11 @@ class GameManager {
     const spawns = MAP_CONFIGS[this.currentMapId].spawns;
     const roomList = this.network.getRoomPlayersList();
 
+    this.gameOverPending = false;
     this.players = roomList.map((rp, idx) => {
       const sp = spawns[idx] || { x: 180 + idx * 210, y: 520, facing: idx % 2 === 0 };
       const char = new Character(rp.id, rp.name, sp.x, sp.y, sp.facing, rp.color);
+      char.isBot = !!rp.isBot;
       if (rp.equip) {
         char.weapon = WEAPONS.find(w => w.id === rp.equip.weaponId) || WEAPONS[0];
         char.helmet = ARMORS.helmet.find(a => a.id === rp.equip.helmId) || ARMORS.helmet[0];
@@ -2835,10 +3196,13 @@ class GameManager {
     this.arrows = [];
     this.aoeZones = [];
     this.medikits = [];
+    this.energyPacks = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
     this.medikitSpawnTimer = 3;
+    this.energyPackSpawnTimer = 5;
+    this.pendingHitEvents = [];
 
     // Gửi thông báo bắt đầu trận đấu cho tất cả Client
     this.network.broadcastToClients({
@@ -2858,9 +3222,11 @@ class GameManager {
     const spawns = MAP_CONFIGS[this.currentMapId].spawns;
     const roomList = msg.players || msg.roomPlayers || [];
 
+    this.gameOverPending = false;
     this.players = roomList.map((rp, idx) => {
       const sp = spawns[idx] || { x: 180 + idx * 210, y: 520, facing: idx % 2 === 0 };
       const char = new Character(rp.id, rp.name, sp.x, sp.y, sp.facing, rp.color);
+      char.isBot = !!rp.isBot;
       if (rp.equip) {
         char.weapon = WEAPONS.find(w => w.id === rp.equip.weaponId) || WEAPONS[0];
         char.helmet = ARMORS.helmet.find(a => a.id === rp.equip.helmId) || ARMORS.helmet[0];
@@ -2873,6 +3239,7 @@ class GameManager {
     this.arrows = [];
     this.aoeZones = [];
     this.medikits = [];
+    this.energyPacks = [];
     this.particles = [];
     this.lightnings = [];
     this.floatingTexts = [];
@@ -2897,22 +3264,38 @@ class GameManager {
 
     this.players.forEach(p => {
       const card = document.createElement('div');
-      card.className = 'player-hud ffa-player-card';
+      card.className = `player-hud ffa-player-card ${p.isDead ? 'eliminated' : ''}`;
       card.id = `ffa-hud-${p.id}`;
+
+      const weaponName = p.weapon ? p.weapon.name : 'Cung';
+      const weaponTier = p.weapon ? p.weapon.tier : 'A';
+      const hDef = p.helmet ? p.helmet.defPercent : 0;
+      const cDef = p.chest ? p.chest.defPercent : 0;
+      const bDef = p.boots ? p.boots.defPercent : 0;
+
       card.innerHTML = `
         <div class="hud-avatar" style="background: ${p.color};">
           ${p.id.toUpperCase()}
         </div>
         <div class="hud-info">
           <div class="hud-name-row">
-            <span class="hud-name">${p.name}</span>
-            <span class="hud-weapon-badge">${p.weapon.name} (${p.weapon.tier})</span>
+            <span class="hud-name" title="${p.name}">${p.name}</span>
+            <span class="hud-weapon-badge">${weaponName} (${weaponTier})</span>
           </div>
           <div class="hp-bar-outer">
             <div class="hp-bar-fill" id="${p.id}-hp-fill" style="width: 100%; background: ${p.color};"></div>
-            <span class="hp-text" id="${p.id}-hp-text">100 / 100</span>
+            <span class="hp-text" id="${p.id}-hp-text">${Math.ceil(p.hp)} / ${p.maxHp}</span>
+          </div>
+          <div class="energy-bar-outer">
+            <div class="energy-bar-fill" id="${p.id}-energy-fill" style="width: 100%;"></div>
+            <span class="energy-text" id="${p.id}-energy-text">${Math.ceil(p.energy)} / ${p.maxEnergy} ⚡</span>
+          </div>
+          <div class="hud-stats-row">
+            <span id="${p.id}-stat-def" title="Giảm ST Đầu / Thân / Chân">🛡️ Đ-${hDef}% T-${cDef}% C-${bDef}%</span>
+            <span id="${p.id}-stat-aim">🎯 0°</span>
           </div>
           <div class="status-tags" id="${p.id}-status-tags"></div>
+          <div class="eliminated-badge">💀 ĐÃ BỊ HẠ GỤC</div>
         </div>
       `;
       container.appendChild(card);
@@ -2957,6 +3340,9 @@ class GameManager {
 
     this.input.handleHostInput();
 
+    // Cập nhật trí tuệ nhân tạo Bot (AI)
+    this.updateBotAIs(dt);
+
     // Cập nhật tất cả người chơi
     this.players.forEach(p => p.update(dt, this.groundY, this.platforms));
 
@@ -2972,7 +3358,7 @@ class GameManager {
       box.update(dt, this.groundY, this.platforms);
       if (box.active) {
         for (let p of this.players) {
-          if (!p.isDead && this.checkCollisionBox(p, box)) {
+          if (!p.isDead && p.defeatState === 'ALIVE' && this.checkCollisionBox(p, box)) {
             p.heal(25);
             this.floatingTexts.push(new FloatingText(p.x, p.y - 60, '+25 HP (Cứu Thương)', '#2ed573', 22));
             box.active = false;
@@ -2982,6 +3368,33 @@ class GameManager {
       }
     });
     this.medikits = this.medikits.filter(b => b.active);
+
+    // Sinh gói năng lượng tiếp tế (Energy Pack Supply Drop)
+    this.energyPackSpawnTimer -= dt;
+    if (this.energyPackSpawnTimer <= 0) {
+      const spawnX = 180 + Math.random() * 920;
+      this.energyPacks.push(new EnergyPack(spawnX, -50));
+      this.energyPackSpawnTimer = 10 + Math.random() * 10;
+    }
+
+    this.energyPacks.forEach(pack => {
+      pack.update(dt, this.groundY, this.platforms);
+      if (pack.active) {
+        for (let p of this.players) {
+          if (!p.isDead && p.defeatState === 'ALIVE' && this.checkCollisionBox(p, pack)) {
+            p.addEnergy(pack.energyAmount);
+            sounds.playEnergyPickup();
+            this.floatingTexts.push(new FloatingText(p.x, p.y - 60, `+${pack.energyAmount} NĂNG LƯỢNG ⚡`, '#00d2d3', 22, true));
+            for (let i = 0; i < 14; i++) {
+              this.particles.push(new Particle(p.x, p.y - 25, (Math.random()-0.5)*110, (Math.random()-0.5)*110, '#00d2d3', 3.5, 0.4, 'spark'));
+            }
+            pack.active = false;
+            break;
+          }
+        }
+      }
+    });
+    this.energyPacks = this.energyPacks.filter(p => p.active);
 
     // Cập nhật mũi tên
     this.arrows.forEach(arrow => {
@@ -3014,6 +3427,89 @@ class GameManager {
     this.broadcastMatchStateSync();
   }
 
+  updateBotAIs(dt) {
+    if (!this.network.isHost) return;
+
+    this.players.forEach(p => {
+      if (!p.isBot || p.isDead || p.defeatState !== 'ALIVE') return;
+
+      if (!p.botAiState) {
+        p.botAiState = {
+          thinkTimer: 0.2 + Math.random() * 0.5,
+          shootTimer: 1.2 + Math.random() * 1.5,
+          desiredPower: 50,
+          moveTimer: 0,
+          moveDir: 0
+        };
+      }
+
+      const ai = p.botAiState;
+      ai.thinkTimer -= dt;
+      ai.shootTimer -= dt;
+      ai.moveTimer -= dt;
+
+      // Tìm mục tiêu kẻ địch còn sống gần nhất
+      const enemies = this.players.filter(o => o.id !== p.id && !o.isDead && o.defeatState === 'ALIVE');
+      if (enemies.length === 0) {
+        p.vx = 0;
+        return;
+      }
+
+      let nearest = enemies[0];
+      let minDist = Math.hypot(nearest.x - p.x, nearest.y - p.y);
+      for (let i = 1; i < enemies.length; i++) {
+        const d = Math.hypot(enemies[i].x - p.x, enemies[i].y - p.y);
+        if (d < minDist) {
+          minDist = d;
+          nearest = enemies[i];
+        }
+      }
+
+      // Quay mặt về phía mục tiêu
+      const shouldFaceRight = nearest.x >= p.x;
+      if (p.facingRight !== shouldFaceRight) {
+        p.setFacing(shouldFaceRight);
+      }
+
+      // Căn góc nhắm theo quỹ đạo vòng cung có bù trừ trọng lực
+      const dx = nearest.x - p.x;
+      const dy = (nearest.y - 25) - (p.y - 30);
+      const dist = Math.hypot(dx, dy);
+
+      const directAngle = Math.atan2(dy, dx);
+      // Nâng góc bắn cao hơn một chút theo khoảng cách
+      const arcAdjustment = -Math.min(0.42, (dist / 1400) * 0.45);
+      p.aimAngle = directAngle + arcAdjustment;
+
+      // Di chuyển ngẫu nhiên
+      if (ai.moveTimer <= 0) {
+        ai.moveTimer = 1.2 + Math.random() * 2.0;
+        const r = Math.random();
+        if (r < 0.35) ai.moveDir = -1;
+        else if (r < 0.7) ai.moveDir = 1;
+        else ai.moveDir = 0;
+
+        if (Math.random() < 0.3 && p.isGrounded) {
+          p.jump();
+        }
+      }
+      p.vx = ai.moveDir;
+
+      // Tụ lực và bắn
+      if (ai.shootTimer <= 0) {
+        if (!p.isCharging) {
+          ai.desiredPower = Math.min(100, Math.max(25, (dist / 950) * 80 + (Math.random() - 0.5) * 15));
+          p.startCharge();
+        } else {
+          if (p.chargePower >= ai.desiredPower) {
+            p.releaseCharge();
+            ai.shootTimer = 1.8 + Math.random() * 2.0;
+          }
+        }
+      }
+    });
+  }
+
   checkCollisionBox(char, box) {
     return (
       char.x + char.width / 2 > box.x &&
@@ -3023,12 +3519,26 @@ class GameManager {
     );
   }
 
+  arrowIntersectsBox(arrow, box) {
+    if (!box || box.width <= 0 || box.height <= 0) return false;
+    if (this.pointInRect(arrow.x, arrow.y, box)) return true;
+    const cos = Math.cos(arrow.angle);
+    const sin = Math.sin(arrow.angle);
+    const midX = arrow.x - cos * 13;
+    const midY = arrow.y - sin * 13;
+    if (this.pointInRect(midX, midY, box)) return true;
+    const tailX = arrow.x - cos * 26;
+    const tailY = arrow.y - sin * 26;
+    if (this.pointInRect(tailX, tailY, box)) return true;
+    return false;
+  }
+
   checkArrowCollisions(arrow) {
     for (let plat of this.platforms) {
-      if (this.pointInRect(arrow.x, arrow.y, plat)) {
+      if (this.arrowIntersectsBox(arrow, plat)) {
         arrow.active = false;
         sounds.playObstacleHit();
-        this.aoeZones.push(new AoEZone(arrow.x, arrow.y, arrow.weapon.element, arrow.owner));
+        this.aoeZones.push(new AoEZone(arrow.x, arrow.y, arrow.weapon ? arrow.weapon.element : 'none', arrow.owner));
 
         for (let i = 0; i < 8; i++) {
           this.particles.push(new Particle(arrow.x, arrow.y, (Math.random()-0.5)*90, (Math.random()-0.5)*90, '#bdc581', 3, 0.3));
@@ -3037,44 +3547,35 @@ class GameManager {
       }
     }
 
-    // Hỗn chiến Free For All: Mũi tên có thể gây sát thương lên BẤT KỲ người chơi nào khác
+    // Hỗn chiến Free For All: Mũi tên gây sát thương lên bất kỳ người chơi nào còn sống
     for (let target of this.players) {
-      if (target.isDead || target.id === arrow.owner) continue;
+      if (target.isDead || target.defeatState !== 'ALIVE' || target.id === arrow.owner) continue;
       const hitboxes = target.getHitboxes();
 
-      if (this.pointInRect(arrow.x, arrow.y, hitboxes.head)) {
+      if (this.arrowIntersectsBox(arrow, hitboxes.head)) {
         target.takeDamage(arrow, 'head');
-        this.recordHit(arrow.owner, true);
         arrow.active = false;
         return;
       }
-      if (this.pointInRect(arrow.x, arrow.y, hitboxes.body)) {
+      if (this.arrowIntersectsBox(arrow, hitboxes.body)) {
         target.takeDamage(arrow, 'body');
-        this.recordHit(arrow.owner, false);
         arrow.active = false;
         return;
       }
-      if (this.pointInRect(arrow.x, arrow.y, hitboxes.limbs)) {
+      if (this.arrowIntersectsBox(arrow, hitboxes.limbs)) {
         target.takeDamage(arrow, 'limbs');
-        this.recordHit(arrow.owner, false);
         arrow.active = false;
         return;
       }
     }
 
+    // Chạm sàn đất vững chắc: Không có hố, đạn luôn kích hoạt hiệu ứng chạm sàn
     if (arrow.y >= this.groundY) {
       arrow.active = false;
-      this.aoeZones.push(new AoEZone(arrow.x, this.groundY, arrow.weapon.element, arrow.owner));
+      this.aoeZones.push(new AoEZone(arrow.x, this.groundY, arrow.weapon ? arrow.weapon.element : 'none', arrow.owner));
       for (let i = 0; i < 6; i++) {
         this.particles.push(new Particle(arrow.x, this.groundY, (Math.random()-0.5)*80, -Math.random()*60, '#78e08f', 3, 0.3));
       }
-    }
-  }
-
-  recordHit(ownerId, isHeadshot) {
-    const shooter = this.players.find(p => p.id === ownerId);
-    if (shooter) {
-      shooter.hitsLanded++;
     }
   }
 
@@ -3085,27 +3586,46 @@ class GameManager {
   checkFFAWinCondition() {
     if (this.state !== 'PLAYING') return;
 
-    const alivePlayers = this.players.filter(p => !p.isDead && p.hp > 0);
+    const alivePlayers = this.players.filter(p => !p.isDead && p.hp > 0 && p.defeatState === 'ALIVE');
 
-    // Trận đấu kết thúc khi chỉ còn tối đa 1 người sống sót
-    if (alivePlayers.length <= 1) {
-      setTimeout(() => {
-        if (this.state !== 'PLAYING') return;
-        this.state = 'GAMEOVER';
-        sounds.playVictory();
+    // Nếu trận đấu ban đầu có >= 2 người: Chỉ kết thúc khi còn đúng 1 người hoặc 0 người sống sót
+    if (this.players.length >= 2) {
+      if (alivePlayers.length <= 1) {
+        if (this.gameOverPending) return;
+        this.gameOverPending = true;
 
-        const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
-        const leaderboard = this.buildLeaderboardData(winner);
+        setTimeout(() => {
+          if (this.state !== 'PLAYING') return;
+          this.state = 'GAMEOVER';
+          sounds.playVictory();
 
-        // Hiển thị modal trên Host
-        this.showLeaderboardModal(leaderboard);
+          const winner = alivePlayers.length === 1 ? alivePlayers[0] : null;
+          const leaderboard = this.buildLeaderboardData(winner);
 
-        // Gửi kết quả cho tất cả Client
-        this.network.broadcastToClients({
-          type: 'MATCH_GAME_OVER',
-          leaderboard: leaderboard
-        });
-      }, 1400);
+          // Hiển thị modal trên Host
+          this.showLeaderboardModal(leaderboard);
+
+          // Gửi kết quả cho tất cả Client
+          this.network.broadcastToClients({
+            type: 'MATCH_GAME_OVER',
+            leaderboard: leaderboard
+          });
+        }, 1600);
+      }
+    } else if (this.players.length === 1) {
+      // Chế độ luyện tập 1 mình: chỉ kết thúc khi người chơi gục ngã (HP = 0)
+      if (alivePlayers.length === 0) {
+        if (this.gameOverPending) return;
+        this.gameOverPending = true;
+
+        setTimeout(() => {
+          if (this.state !== 'PLAYING') return;
+          this.state = 'GAMEOVER';
+          sounds.playVictory();
+          const leaderboard = this.buildLeaderboardData(null);
+          this.showLeaderboardModal(leaderboard);
+        }, 1600);
+      }
     }
   }
 
@@ -3172,9 +3692,13 @@ class GameManager {
     if (now - this.lastStateSyncTime < 25) return;
     this.lastStateSyncTime = now;
 
+    const eventsToSend = [...this.pendingHitEvents];
+    this.pendingHitEvents = [];
+
     this.network.broadcastToClients({
       type: 'MATCH_STATE_SYNC',
       wind: this.wind,
+      hitEvents: eventsToSend,
       players: this.players.map(p => ({
         id: p.id,
         name: p.name,
@@ -3184,6 +3708,8 @@ class GameManager {
         vy: p.vy,
         hp: p.hp,
         maxHp: p.maxHp,
+        energy: p.energy,
+        maxEnergy: p.maxEnergy,
         color: p.color,
         facing: p.facingRight,
         crouch: p.isCrouching,
@@ -3197,7 +3723,12 @@ class GameManager {
         shotsFired: p.shotsFired,
         hitsLanded: p.hitsLanded,
         totalDamageDealt: p.totalDamageDealt,
-        isDead: p.isDead
+        isDead: p.isDead,
+        isBot: !!p.isBot,
+        weaponId: p.weapon ? p.weapon.id : 'bow_a_basic',
+        helmId: p.helmet ? p.helmet.id : 'helm_a',
+        chestId: p.chest ? p.chest.id : 'chest_a',
+        bootsId: p.boots ? p.boots.id : 'boots_a'
       })),
       arrows: this.arrows.map(a => ({
         x: a.x,
@@ -3224,6 +3755,11 @@ class GameManager {
         x: m.x,
         y: m.y,
         active: m.active
+      })),
+      energyPacks: this.energyPacks.map(e => ({
+        x: e.x,
+        y: e.y,
+        active: e.active
       }))
     });
   }
@@ -3241,18 +3777,57 @@ class GameManager {
       arrowEl.style.color = Math.abs(this.wind) > 60 ? '#ff4757' : '#70a1ff';
     }
 
+    if (msg.hitEvents && msg.hitEvents.length > 0) {
+      msg.hitEvents.forEach(evt => {
+        const target = this.players.find(p => p.id === evt.targetId);
+        if (target) {
+          target.hurtTimer = 0.25;
+        }
+        sounds.playHit(evt.hitbox);
+        const textPrefix = evt.isCrit ? '💥 CRIT! -' : '-';
+        const textColor = evt.isCrit ? '#ff4757' : (evt.hitbox === 'body' ? '#ffa502' : '#f1f2f6');
+        this.floatingTexts.push(new FloatingText(evt.x, evt.y - 15, `${textPrefix}${evt.damage}`, textColor, evt.isCrit ? 24 : 18, evt.isCrit));
+        for (let i = 0; i < 15; i++) {
+          this.particles.push(new Particle(
+            evt.x, evt.y,
+            (Math.random() - 0.5) * 120,
+            (Math.random() - 0.5) * 120 - 40,
+            evt.isCrit ? '#ff3838' : '#e74c3c', 3.5, 0.4
+          ));
+        }
+      });
+    }
+
     if (msg.players) {
+      let needsHudRerender = false;
       msg.players.forEach(sp => {
         let p = this.players.find(x => x.id === sp.id);
         if (!p) {
           p = new Character(sp.id, sp.name, sp.x, sp.y, sp.facing, sp.color);
           this.players.push(p);
+          needsHudRerender = true;
+        }
+        p.isBot = !!sp.isBot;
+        if (sp.weaponId && (!p.weapon || p.weapon.id !== sp.weaponId)) {
+          p.weapon = WEAPONS.find(w => w.id === sp.weaponId) || p.weapon;
+        }
+        if (sp.helmId && (!p.helmet || p.helmet.id !== sp.helmId)) {
+          p.helmet = ARMORS.helmet.find(a => a.id === sp.helmId) || p.helmet;
+        }
+        if (sp.chestId && (!p.chest || p.chest.id !== sp.chestId)) {
+          p.chest = ARMORS.chest.find(a => a.id === sp.chestId) || p.chest;
+        }
+        if (sp.bootsId && (!p.boots || p.boots.id !== sp.bootsId)) {
+          p.boots = ARMORS.boots.find(a => a.id === sp.bootsId) || p.boots;
         }
         p.x = sp.x;
         p.y = sp.y;
         p.vx = sp.vx;
         p.vy = sp.vy;
         p.hp = sp.hp;
+        p.maxHp = sp.maxHp || 100;
+        p.energy = sp.energy !== undefined ? sp.energy : p.energy;
+        p.maxEnergy = sp.maxEnergy || 100;
         p.facingRight = sp.facing;
         p.isCrouching = sp.crouch;
         p.isCharging = sp.charging;
@@ -3273,6 +3848,9 @@ class GameManager {
           p.aimAngle = sp.aimAngle;
         }
       });
+      if (needsHudRerender) {
+        this.renderCombatHUD();
+      }
     }
 
     if (msg.arrows) {
@@ -3305,6 +3883,14 @@ class GameManager {
       });
     }
 
+    if (msg.energyPacks) {
+      this.energyPacks = msg.energyPacks.map(e => {
+        const pack = new EnergyPack(e.x, e.y);
+        pack.active = e.active;
+        return pack;
+      });
+    }
+
     this.updateCombatHUD();
   }
 
@@ -3316,17 +3902,57 @@ class GameManager {
 
   updateCombatHUD() {
     this.players.forEach(p => {
-      const card = document.getElementById(`ffa-hud-${p.id}`);
-      if (card && p.isDead) {
-        card.classList.add('eliminated');
+      let card = document.getElementById(`ffa-hud-${p.id}`);
+      if (!card) {
+        this.renderCombatHUD();
+        card = document.getElementById(`ffa-hud-${p.id}`);
+        if (!card) return;
       }
 
-      const fillEl = document.getElementById(`${p.id}-hp-fill`);
-      const textEl = document.getElementById(`${p.id}-hp-text`);
-      if (fillEl && textEl) {
-        const hpPercent = Math.max(0, (p.hp / p.maxHp) * 100);
-        fillEl.style.width = `${hpPercent}%`;
-        textEl.innerText = `${Math.ceil(Math.max(0, p.hp))} / ${p.maxHp}`;
+      if (p.isDead || p.defeatState !== 'ALIVE') {
+        card.classList.add('eliminated');
+      } else {
+        card.classList.remove('eliminated');
+      }
+
+      const fillHp = document.getElementById(`${p.id}-hp-fill`);
+      const textHp = document.getElementById(`${p.id}-hp-text`);
+      if (fillHp && textHp) {
+        const hpRatio = Math.max(0, p.hp / p.maxHp);
+        fillHp.style.width = `${hpRatio * 100}%`;
+        textHp.innerText = `${Math.ceil(p.hp)} / ${p.maxHp}`;
+        let hpColor = '#2ed573';
+        if (hpRatio < 0.3) hpColor = '#ff4757';
+        else if (hpRatio < 0.6) hpColor = '#ffa502';
+        fillHp.style.background = hpColor;
+      }
+
+      const fillEn = document.getElementById(`${p.id}-energy-fill`);
+      const textEn = document.getElementById(`${p.id}-energy-text`);
+      if (fillEn && textEn) {
+        const enPercent = Math.max(0, (p.energy / p.maxEnergy) * 100);
+        fillEn.style.width = `${enPercent}%`;
+        textEn.innerText = `${Math.ceil(p.energy)} / ${p.maxEnergy} ⚡`;
+      }
+
+      const aimEl = document.getElementById(`${p.id}-stat-aim`);
+      if (aimEl) {
+        const deg = Math.round((( -p.aimAngle ) * 180 / Math.PI + 360) % 360);
+        const powerText = p.isCharging ? ` | ⚡${Math.round(p.chargePower)}%` : '';
+        aimEl.innerText = `🎯 ${deg}°${powerText}`;
+      }
+
+      const defEl = document.getElementById(`${p.id}-stat-def`);
+      if (defEl) {
+        const h = p.helmet ? p.helmet.defPercent : 0;
+        const c = p.chest ? p.chest.defPercent : 0;
+        const b = p.boots ? p.boots.defPercent : 0;
+        defEl.innerText = `🛡️ Đ-${h}% T-${c}% C-${b}%`;
+      }
+
+      const weaponBadge = card.querySelector('.hud-weapon-badge');
+      if (weaponBadge && p.weapon) {
+        weaponBadge.innerText = `${p.weapon.name} (${p.weapon.tier})`;
       }
 
       this.renderStatusTags(`${p.id}-status-tags`, p.statusEffects);
@@ -3357,6 +3983,7 @@ class GameManager {
     if (this.state === 'PLAYING' || this.state === 'GAMEOVER') {
       this.aoeZones.forEach(z => z.draw(ctx));
       this.medikits.forEach(box => box.draw(ctx));
+      this.energyPacks.forEach(pack => pack.draw(ctx));
 
       // Vẽ tất cả người chơi trong trận hỗn chiến
       this.players.forEach(p => p.draw(ctx));
@@ -3420,17 +4047,107 @@ class GameManager {
     ctx.moveTo(480, 620); ctx.lineTo(820, 390); ctx.lineTo(1180, 620);
     ctx.fill();
 
-    ctx.fillStyle = cfg.groundColor;
-    ctx.fillRect(0, this.groundY, 1280, 100);
+    // VẼ SÀN ĐẤT VÀ CÁC HỐ TỬ THẦN (PITS)
+    const pits = cfg.pits || [];
 
-    ctx.fillStyle = cfg.groundTopColor;
-    ctx.fillRect(0, this.groundY, 1280, 14);
+    // Nếu không có hố: vẽ sàn liền
+    if (pits.length === 0) {
+      ctx.fillStyle = cfg.groundColor;
+      ctx.fillRect(0, this.groundY, 1280, 100);
+      ctx.fillStyle = cfg.groundTopColor;
+      ctx.fillRect(0, this.groundY, 1280, 14);
+      ctx.fillStyle = cfg.flowerColor;
+      for (let i = 80; i < 1240; i += 180) {
+        ctx.beginPath();
+        ctx.arc(i, this.groundY + 4, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Tính toán các đoạn thềm đất nằm ngoài hố
+      const solidSegments = [];
+      let currentLeft = 0;
+      const sortedPits = [...pits].sort((a, b) => a.x - b.x);
 
-    ctx.fillStyle = cfg.flowerColor;
-    for (let i = 80; i < 1240; i += 180) {
-      ctx.beginPath();
-      ctx.arc(i, this.groundY + 4, 4.5, 0, Math.PI * 2);
-      ctx.fill();
+      sortedPits.forEach(pit => {
+        if (pit.x > currentLeft) {
+          solidSegments.push({ x: currentLeft, width: pit.x - currentLeft });
+        }
+        currentLeft = Math.max(currentLeft, pit.x + pit.width);
+      });
+      if (currentLeft < 1280) {
+        solidSegments.push({ x: currentLeft, width: 1280 - currentLeft });
+      }
+
+      // 1. Vẽ các thềm đất liền vững chắc
+      solidSegments.forEach(seg => {
+        ctx.fillStyle = cfg.groundColor;
+        ctx.fillRect(seg.x, this.groundY, seg.width, 100);
+        ctx.fillStyle = cfg.groundTopColor;
+        ctx.fillRect(seg.x, this.groundY, seg.width, 14);
+
+        ctx.fillStyle = cfg.flowerColor;
+        for (let i = seg.x + 25; i < seg.x + seg.width - 20; i += 80) {
+          ctx.beginPath();
+          ctx.arc(i, this.groundY + 4, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+
+      // 2. Vẽ hiệu ứng cảnh báo và đáy vực trong các hố
+      sortedPits.forEach(pit => {
+        if (pit.type === 'lava') {
+          // Vực dung nham sôi sùng sục (Volcano)
+          const lavaGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
+          lavaGrad.addColorStop(0, '#c0392b');
+          lavaGrad.addColorStop(0.3, '#e74c3c');
+          lavaGrad.addColorStop(0.7, '#f39c12');
+          lavaGrad.addColorStop(1, '#d35400');
+          ctx.fillStyle = lavaGrad;
+          ctx.fillRect(pit.x, this.groundY + 28, pit.width, 80);
+
+          // Sóng dung nham nhấp nhô
+          ctx.fillStyle = '#f1c40f';
+          const time = Date.now() / 300;
+          for (let bx = pit.x + 20; bx < pit.x + pit.width - 20; bx += 40) {
+            const by = this.groundY + 30 + Math.sin(time + bx * 0.05) * 5;
+            ctx.beginPath();
+            ctx.arc(bx, by, 6, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          // Biển cảnh báo dung nham
+          ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
+          ctx.fillRect(pit.x, this.groundY, pit.width, 28);
+        } else if (pit.type === 'crevasse') {
+          // Khe nứt băng không đáy (Icecave)
+          const iceGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
+          iceGrad.addColorStop(0, 'rgba(12, 36, 97, 0.9)');
+          iceGrad.addColorStop(1, '#050c1e');
+          ctx.fillStyle = iceGrad;
+          ctx.fillRect(pit.x, this.groundY + 14, pit.width, 90);
+
+          // Nhũ băng nhọn chĩa xuống
+          ctx.fillStyle = 'rgba(130, 204, 221, 0.6)';
+          for (let ix = pit.x + 10; ix < pit.x + pit.width - 10; ix += 35) {
+            ctx.beginPath();
+            ctx.moveTo(ix, this.groundY + 14);
+            ctx.lineTo(ix + 12, this.groundY + 14);
+            ctx.lineTo(ix + 6, this.groundY + 38);
+            ctx.fill();
+          }
+        } else {
+          // Vực thẳm sâu tối tăm (Jungle)
+          const chasmGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
+          chasmGrad.addColorStop(0, '#0a0e17');
+          chasmGrad.addColorStop(1, '#020408');
+          ctx.fillStyle = chasmGrad;
+          ctx.fillRect(pit.x, this.groundY + 14, pit.width, 90);
+
+          // Sương mù ma quái dưới vực
+          ctx.fillStyle = 'rgba(46, 213, 115, 0.15)';
+          ctx.fillRect(pit.x, this.groundY + 35, pit.width, 50);
+        }
+      });
     }
   }
 
