@@ -102,7 +102,7 @@ const WEAPONS = [
     baseDamage: 280,
     speedMultiplier: 1.85,
     special: 'wind_pierce',
-    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng treo lơ lửng, tạo lốc hất tung đối thủ, bay siêu tốc triệt tiêu gió. Sát thương: 280 HP.'
+    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng đối thủ bị thổi bay lên & treo trên không 0.5s; Bắn trúng địa hình tạo vùng gió giữ chân đối thủ 0.5s (vẫn xoay & bắn bình thường). Sát thương: 280 HP.'
   },
 
   // Cấp SSS - Vũ khí thần thoại kèm kỹ năng đặc biệt
@@ -542,26 +542,25 @@ class AoEZone {
       }
     }
 
-    // Nếu là lốc xoáy hệ Gió: Kiểm tra tức thì khi có đối thủ đạp trúng vùng hiệu ứng mở rộng -> hất bay lên như 1 lần nhảy
+    // Nếu là vùng gió Cung Vũ Dực khi trúng địa hình: Kẻ địch trong vùng hiệu ứng bị giữ chân 0.5s, không thể di chuyển, nhưng vẫn quay trái phải và bắn bình thường
     if (this.element === 'wind') {
       const victims = (game.players || []).filter(p => p && p.id !== this.owner && !p.isDead && p.defeatState === 'ALIVE');
 
       victims.forEach(v => {
         const distX = Math.abs(v.x - this.x);
         const distY = Math.abs(v.y - this.y);
-        // Đạp trúng hoặc đi vào vùng lốc xoáy
-        if (distX <= this.radius + 10 && distY <= 38) {
-          if (!v.windBounceCooldown || v.windBounceCooldown <= 0) {
-            v.windBounceCooldown = 0.45;
-            v.vy = v.jumpForce; // Hất tung lên trời với đúng lực của 1 lần nhảy (-470 px/s)
-            v.isGrounded = false;
-            sounds.playJump(false);
+        // Đang ở trong vùng gió địa hình
+        if (distX <= this.radius + 12 && distY <= 45) {
+          v.statusEffects.root = 0.5; // Không được di chuyển trong 0.5s
+          v.vx = 0; // Khóa chuyển động ngang tức thì
 
+          if (!v.windRootCooldown || v.windRootCooldown <= 0) {
+            v.windRootCooldown = 0.55;
+            game.floatingTexts.push(new FloatingText(v.x, v.y - 48, '🌪️ BỊ GIỮ CHÂN (0.5s)', '#00d2d3', 17, true));
             game.particles.push(new Particle(v.x, v.y, 0, 0, '#00d2d3', 1, 0.4, 'shockwave'));
             for (let i = 0; i < 8; i++) {
-              game.particles.push(new Particle(v.x, v.y, (Math.random()-0.5)*70, -60 - Math.random()*40, '#00d2d3', 3.5, 0.4, 'circle'));
+              game.particles.push(new Particle(v.x, v.y, (Math.random()-0.5)*50, -25 - Math.random()*25, '#ffffff', 3, 0.35, 'circle'));
             }
-            game.floatingTexts.push(new FloatingText(v.x, v.y - 45, '🌪️ HẤT TUNG!', '#00d2d3', 17, true));
           }
         }
       });
@@ -587,6 +586,10 @@ class AoEZone {
         if (this.element === 'fire') v.statusEffects.burn = 3.0;
         if (this.element === 'ice') v.statusEffects.freeze = 1.0;
         if (this.element === 'lightning') v.statusEffects.stun = 0.6;
+        if (this.element === 'wind') {
+          v.statusEffects.root = 0.5; // Giữ chân 0.5s
+          v.vx = 0;
+        }
 
         if (this.element === 'wood') {
           const shooter = game.getCharacterById(this.owner);
@@ -1686,9 +1689,11 @@ class Character {
       burn: 0,
       poison: 0,
       slow: 0,
-      levitate: 0
+      levitate: 0,
+      root: 0
     };
     this.windBounceCooldown = 0;
+    this.windRootCooldown = 0;
     this.dotTickTimer = 0;
 
     this.totalDamageDealt = 0;
@@ -1807,9 +1812,10 @@ class Character {
 
       let effectiveSpeed = this.moveSpeed;
       if (this.statusEffects.slow > 0) effectiveSpeed *= 0.5;
+      if (this.statusEffects.root > 0) effectiveSpeed = 0; // Bị giữ chân bởi lốc xoáy địa hình, không thể di chuyển
       this.x += this.vx * effectiveSpeed * dt;
 
-      // Hướng nhìn tự động bám sát góc nhắm
+      // Hướng nhìn tự động bám sát góc nhắm (vẫn xoay trái phải bình thường)
       this.facingRight = Math.cos(this.aimAngle) >= 0;
     }
 
@@ -1904,6 +1910,10 @@ class Character {
       }
     }
 
+    if (this.windRootCooldown > 0) {
+      this.windRootCooldown -= dt;
+    }
+
     this.dotTickTimer += dt;
     if (this.dotTickTimer >= 0.5) {
       this.dotTickTimer = 0;
@@ -1985,7 +1995,7 @@ class Character {
 
   // CƠ CHẾ NHẢY 2 LẦN (DOUBLE JUMP)
   jump() {
-    if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.statusEffects.levitate > 0 || this.isDead) return;
+    if (this.statusEffects.freeze > 0 || this.statusEffects.stun > 0 || this.statusEffects.levitate > 0 || this.statusEffects.root > 0 || this.isDead) return;
 
     if (this.isGrounded) {
       // Cú nhảy lần 1
@@ -2142,15 +2152,21 @@ class Character {
           ));
         }
         break;
-      case 'wind':
-        this.statusEffects.levitate = 0.5; // Cung Vũ Dực: Treo lơ lửng trong 0.5s
-        this.vy = 0; // Ngắt rơi tự do ngay lập tức
-        this.vx = 0; // Ngắt quán tính di chuyển ngang
-        for (let i = 0; i < 15; i++) {
-          game.particles.push(new Particle(this.x, this.y - 20, (Math.random()-0.5)*50, -40 - Math.random()*30, '#00d2d3', 3.5, 0.45, 'circle'));
+      case 'wind': {
+        const jumpHeight = 110; // Chiều cao đúng bằng 1 lần nhảy
+        this.y = Math.max(90, this.y - jumpHeight); // Thổi bay lên không trung
+        this.vy = 0; // Triệt tiêu trọng lực rơi tức thì, giữ nguyên độ cao
+        this.vx = 0; // Triệt tiêu quán tính di chuyển ngang
+        this.isGrounded = false;
+        this.statusEffects.levitate = 0.5; // Treo lơ lửng trên không trong 0.5s
+        sounds.playJump(false);
+        for (let i = 0; i < 20; i++) {
+          game.particles.push(new Particle(this.x, this.y - 10, (Math.random()-0.5)*70, -35 - Math.random()*35, '#00d2d3', 3.5, 0.45, 'circle'));
         }
-        game.floatingTexts.push(new FloatingText(this.x, this.y - 50, '🌪️ LƠ LỬNG (0.5s)', '#00d2d3', 18, true));
+        game.particles.push(new Particle(this.x, this.y, 0, 0, '#00d2d3', 1, 0.4, 'shockwave'));
+        game.floatingTexts.push(new FloatingText(this.x, this.y - 50, '🌪️ THỔI BAY LƠ LỬNG (0.5s)', '#00d2d3', 18, true));
         break;
+      }
     }
   }
 
@@ -2468,18 +2484,42 @@ class Character {
       ctx.strokeRect(this.x - 18, this.y - currentH - 6, 36, currentH + 10);
     }
 
-    // Hiệu ứng Bay Lơ Lửng gió
+    // Hiệu ứng Bay Lơ Lửng gió (Levitate từ Cung Vũ Dực)
     if (this.statusEffects.levitate > 0) {
-      const spin = Date.now() / 140;
-      ctx.strokeStyle = 'rgba(0, 210, 211, 0.85)';
-      ctx.lineWidth = 2.2;
+      const spin = Date.now() / 130;
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 210, 211, 0.9)';
+      ctx.lineWidth = 2.4;
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y - 4, 18, 6, spin, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y - 4, 20, 7, spin, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.beginPath();
-      ctx.ellipse(this.x, this.y - 12, 14, 5, -spin, 0, Math.PI * 2);
+      ctx.ellipse(this.x, this.y - 14, 16, 5, -spin, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
+    }
+
+    // Hiệu ứng Giữ Chân (Root từ Vùng Địa Hình Cung Vũ Dực)
+    if (this.statusEffects.root > 0) {
+      const spin = Date.now() / 90;
+      ctx.save();
+      ctx.strokeStyle = '#00d2d3';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y - 2, 18, 5, spin, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.beginPath();
+      ctx.ellipse(this.x, this.y - 8, 14, 4, -spin, 0, Math.PI * 2);
+      ctx.stroke();
+      // Luồng khí gió xoáy khóa chân
+      ctx.fillStyle = '#00d2d3';
+      ctx.beginPath();
+      ctx.arc(this.x + Math.cos(spin) * 16, this.y - 5 + Math.sin(spin) * 3, 2.5, 0, Math.PI * 2);
+      ctx.arc(this.x - Math.cos(spin) * 16, this.y - 5 - Math.sin(spin) * 3, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
 
     // =========================================================================
@@ -3958,9 +3998,12 @@ class InputHandler {
       if (e.key.toLowerCase() === 'w') {
         if (this.game.network.isHost) {
           const myChar = this.game.players.find(p => p.id === 'p1');
-          if (myChar) myChar.jump();
+          if (myChar && (!myChar.statusEffects.root || myChar.statusEffects.root <= 0)) myChar.jump();
         } else if (this.game.network.isClient) {
-          this.game.network.sendToHost({ type: 'CLIENT_JUMP' });
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          if (myChar && (!myChar.statusEffects.root || myChar.statusEffects.root <= 0)) {
+            this.game.network.sendToHost({ type: 'CLIENT_JUMP' });
+          }
         }
       }
 
@@ -4017,13 +4060,15 @@ class InputHandler {
     if (!p1 || p1.isDead) return;
 
     p1.vx = 0;
+    const isRooted = p1.statusEffects && p1.statusEffects.root > 0;
+
     if (this.keys['a']) {
-      p1.vx = -1;
-      p1.setFacing(false);
+      if (!isRooted) p1.vx = -1;
+      p1.setFacing(false); // Vẫn quay trái bình thường
     }
     if (this.keys['d']) {
-      p1.vx = 1;
-      p1.setFacing(true);
+      if (!isRooted) p1.vx = 1;
+      p1.setFacing(true); // Vẫn quay phải bình thường
     }
 
     p1.crouch(!!this.keys['s']);
@@ -4038,9 +4083,11 @@ class InputHandler {
 
     let vx = 0;
     let facing = this.game.network.localFacingRight;
+    const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+    const isRooted = myChar && myChar.statusEffects && myChar.statusEffects.root > 0;
 
     if (this.keys['a']) {
-      vx = -1;
+      if (!isRooted) vx = -1;
       if (facing) {
         facing = false;
         const sinA = Math.sin(this.game.network.localAimAngle);
@@ -4049,7 +4096,7 @@ class InputHandler {
       }
     }
     if (this.keys['d']) {
-      vx = 1;
+      if (!isRooted) vx = 1;
       if (!facing) {
         facing = true;
         const sinA = Math.sin(this.game.network.localAimAngle);
@@ -4063,15 +4110,15 @@ class InputHandler {
     if (this.keys['ArrowLeft'] || this.keys['arrowleft']) this.game.network.localAimAngle -= angleSpeed;
     if (this.keys['ArrowRight'] || this.keys['arrowright']) this.game.network.localAimAngle += angleSpeed;
 
-    const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
     if (myChar) {
       myChar.aimAngle = this.game.network.localAimAngle;
       myChar.facingRight = facing;
+      if (isRooted) myChar.vx = 0;
     }
 
     this.game.network.sendToHost({
       type: 'CLIENT_INPUT',
-      vx: vx,
+      vx: isRooted ? 0 : vx,
       facing: facing,
       crouch: !!this.keys['s'],
       aimAngle: this.game.network.localAimAngle
@@ -4875,11 +4922,11 @@ class GameManager {
         else if (r < 0.7) ai.moveDir = 1;
         else ai.moveDir = 0;
 
-        if (Math.random() < 0.3 && p.isGrounded) {
+        if (Math.random() < 0.3 && p.isGrounded && (!p.statusEffects.root || p.statusEffects.root <= 0)) {
           p.jump();
         }
       }
-      p.vx = ai.moveDir;
+      p.vx = (p.statusEffects.root > 0) ? 0 : ai.moveDir;
 
       // Tụ lực và bắn
       if (ai.shootTimer <= 0) {
@@ -5357,7 +5404,8 @@ class GameManager {
     if (effects.stun > 0) html += `<span class="status-tag status-stun">⚡ (${effects.stun.toFixed(1)}s)</span>`;
     if (effects.poison > 0) html += `<span class="status-tag status-poison">☠️ (${effects.poison.toFixed(1)}s)</span>`;
     if (effects.slow > 0) html += `<span class="status-tag status-slow">💧 (${effects.slow.toFixed(1)}s)</span>`;
-    if (effects.levitate > 0) html += `<span class="status-tag status-wind">🌪️ (${effects.levitate.toFixed(1)}s)</span>`;
+    if (effects.levitate > 0) html += `<span class="status-tag status-wind">🌪️ Lơ lửng (${effects.levitate.toFixed(1)}s)</span>`;
+    if (effects.root > 0) html += `<span class="status-tag status-wind">🌪️ Giữ chân (${effects.root.toFixed(1)}s)</span>`;
     el.innerHTML = html;
   }
 
