@@ -85,6 +85,7 @@
           </div>
 
           <!-- Khi đã kết nối vào phòng -->
+          <div class="room-info-bar hidden" id="room-info-bar">
             <div class="room-badge-group">
               <span class="room-code-badge">MÃ PHÒNG: <strong id="current-room-code">AGY-XXXX</strong></span>
               <button type="button" id="btn-copy-room-code" class="btn-sm-action">📋 Copy Mã</button>
@@ -96,6 +97,17 @@
               <span id="room-player-count-badge" class="badge-count">👥 1/5 Người Chơi</span>
             </div>
             <button type="button" id="btn-leave-room" class="btn-sm-action btn-danger">🚪 Rời Phòng</button>
+          </div>
+
+          <!-- Bảng hiển thị trực quan Trạng Thái Kết Nối & Nhật Ký Mạng (Logs) -->
+          <div class="network-log-panel" id="network-log-panel">
+            <div class="net-log-header">
+              <span class="net-log-title">📡 TRẠNG THÁI KẾT NỐI (NETWORK LOGS):</span>
+              <span id="net-conn-status-badge" class="net-status-badge badge-idle">⚪ Chưa kết nối</span>
+            </div>
+            <div class="net-log-console" id="net-log-console">
+              <div class="log-item info">⚡ Hệ thống sẵn sàng. Bấm "Tạo Phòng Mới" hoặc "Vào Phòng" để bắt đầu.</div>
+            </div>
           </div>
         </div>
 

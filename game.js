@@ -2282,6 +2282,27 @@ class NetworkManager {
     }
   }
 
+  logStatus(msg, type = 'info', badgeText = null, badgeClass = null) {
+    console.log(`[NET-${type.toUpperCase()}] ${msg}`);
+    const consoleEl = document.getElementById('net-log-console');
+    if (consoleEl) {
+      const timeStr = new Date().toLocaleTimeString('vi-VN', { hour12: false });
+      const item = document.createElement('div');
+      item.className = `log-item ${type}`;
+      item.innerText = `[${timeStr}] ${msg}`;
+      consoleEl.appendChild(item);
+      consoleEl.scrollTop = consoleEl.scrollHeight;
+    }
+
+    if (badgeText) {
+      const badge = document.getElementById('net-conn-status-badge');
+      if (badge) {
+        badge.innerText = badgeText;
+        badge.className = `net-status-badge ${badgeClass || 'badge-idle'}`;
+      }
+    }
+  }
+
   generateRoomCode() {
     return 'AGY-' + Math.floor(1000 + Math.random() * 9000);
   }
@@ -2332,6 +2353,8 @@ class NetworkManager {
     this.myPlayerId = 'p1';
     this.isReady = true;
 
+    this.logStatus(`Đang khởi tạo phòng Host ${code}...`, 'info', '🟡 Đang kết nối PeerJS...', 'badge-connecting');
+
     // Cập nhật URL trình duyệt để phản ánh mã phòng
     if (window.history && window.history.replaceState) {
       const url = new URL(window.location.href);
@@ -2346,29 +2369,39 @@ class NetworkManager {
 
     if (typeof Peer !== 'undefined') {
       try {
+        this.logStatus(`Đăng ký Peer ID: ${peerId} với PeerJS Server...`, 'info');
         this.peer = new Peer(peerId, this.getPeerConfig());
 
         this.peer.on('open', (id) => {
-          console.log('PeerJS Host sẵn sàng với ID:', id);
+          this.logStatus(`✅ Host mở phòng thành công! Peer ID: ${id}. Sẵn sàng đón người chơi khác IP.`, 'success', '🟢 Sẵn sàng nhận khách', 'badge-connected');
         });
 
         this.peer.on('connection', (conn) => {
+          this.logStatus(`⚡ Có người chơi (Peer: ${conn.peer}) đang kết nối vào phòng...`, 'info');
           if (this.clients.size >= 4) {
             conn.on('open', () => {
               conn.send({ type: 'ROOM_FULL', message: 'Phòng đã đủ tối đa 5 người chơi!' });
               setTimeout(() => conn.close(), 500);
             });
+            this.logStatus(`Phòng đã đủ 5 người, từ chối peer: ${conn.peer}`, 'warn');
             return;
           }
           this.handleIncomingClientConnection(conn);
         });
 
         this.peer.on('error', (err) => {
-          console.warn('PeerJS Host Error:', err);
+          this.logStatus(`❌ Lỗi PeerJS Host: [${err.type}] ${err.message || err}`, 'error', '🔴 Lỗi kết nối Host', 'badge-error');
+        });
+
+        this.peer.on('disconnected', () => {
+          this.logStatus('⚠️ PeerJS Host bị ngắt kết nối với máy chủ báo hiệu. Đang thử kết nối lại...', 'warn');
+          try { this.peer.reconnect(); } catch(e){}
         });
       } catch (e) {
-        console.warn('PeerJS Host init failed:', e);
+        this.logStatus(`❌ Khởi tạo PeerJS thất bại: ${e.message}`, 'error', '🔴 Lỗi khởi tạo', 'badge-error');
       }
+    } else {
+      this.logStatus('❌ Không tìm thấy thư viện PeerJS! Hãy kiểm tra mạng internet.', 'error', '🔴 Thiếu PeerJS', 'badge-error');
     }
 
     this.showInRoomUI();
@@ -2383,6 +2416,8 @@ class NetworkManager {
     this.isClient = true;
     this.inRoom = true;
     this.isReady = false;
+
+    this.logStatus(`Chuẩn bị vào phòng ${code}...`, 'info', '🟡 Đang kết nối Host...', 'badge-connecting');
 
     // Cập nhật URL trình duyệt
     if (window.history && window.history.replaceState) {
@@ -2401,7 +2436,7 @@ class NetworkManager {
         this.peer = new Peer(this.getPeerConfig());
 
         this.peer.on('open', (myPeerId) => {
-          console.log('Client PeerJS ID:', myPeerId, 'đang kết nối tới Host:', hostPeerId);
+          this.logStatus(`Đã kết nối máy chủ báo hiệu. Client ID: ${myPeerId}. Bắt đầu liên kết tới Host (${hostPeerId})...`, 'info');
           const conn = this.peer.connect(hostPeerId, {
             reliable: true
           });
@@ -2410,7 +2445,7 @@ class NetworkManager {
           // Kiểm tra nếu sau 8s chưa vào được phòng thì thử kết nối lại
           setTimeout(() => {
             if (this.inRoom && this.isClient && (!this.myPlayerId || this.myPlayerId === 'p1')) {
-              console.warn('Kết nối chưa mở sau 8s, thử kết nối lại...');
+              this.logStatus('⏳ Sau 8s WebRTC chưa mở, đang thử kết nối lại lần 2...', 'warn');
               if (this.peer && !this.peer.destroyed) {
                 const retryConn = this.peer.connect(hostPeerId, { reliable: true });
                 this.setupClientConnection(retryConn);
@@ -2420,14 +2455,21 @@ class NetworkManager {
         });
 
         this.peer.on('error', (err) => {
-          console.warn('PeerJS Client Error:', err);
+          this.logStatus(`❌ Lỗi Client: [${err.type}] ${err.message || err}`, 'error', '🔴 Không thể vào phòng', 'badge-error');
           if (err.type === 'peer-unavailable') {
             alert('Không tìm thấy phòng ' + code + '! Hãy chắc chắn rằng Chủ phòng (Host) đang mở game.');
           }
         });
+
+        this.peer.on('disconnected', () => {
+          this.logStatus('⚠️ Client bị ngắt kết nối tạm thời với Peer server. Đang kết nối lại...', 'warn');
+          try { this.peer.reconnect(); } catch(e){}
+        });
       } catch (e) {
-        console.warn('PeerJS Client init failed:', e);
+        this.logStatus(`❌ Client khởi tạo Peer thất bại: ${e.message}`, 'error', '🔴 Lỗi khởi tạo', 'badge-error');
       }
+    } else {
+      this.logStatus('❌ Không tìm thấy thư viện PeerJS!', 'error', '🔴 Thiếu PeerJS', 'badge-error');
     }
 
     // Gửi join qua BroadcastChannel phòng trường hợp cùng trình duyệt / khác tab
@@ -2458,10 +2500,10 @@ class NetworkManager {
   }
 
   handleIncomingClientConnection(conn) {
-    console.log('Host nhận kết nối từ peer:', conn.peer);
+    this.logStatus(`[Host] Đang kết nối WebRTC DataChannel với ${conn.peer}...`, 'info');
 
     conn.on('open', () => {
-      console.log('Host: DataConnection đã OPEN với:', conn.peer);
+      this.logStatus(`[Host] ✅ Kết nối DataChannel đã MỞ (OPEN) với ${conn.peer}!`, 'success');
     });
 
     conn.on('data', (data) => {
@@ -2469,11 +2511,11 @@ class NetworkManager {
     });
 
     conn.on('error', (err) => {
-      console.warn('Host: DataConnection error với ' + conn.peer, err);
+      this.logStatus(`[Host] ❌ Lỗi DataConnection với ${conn.peer}: ${err.message || err}`, 'error');
     });
 
     conn.on('close', () => {
-      console.log('Host: DataConnection đã đóng với:', conn.peer);
+      this.logStatus(`[Host] 🔌 Người chơi (Peer ${conn.peer}) đã ngắt kết nối.`, 'warn');
       for (let [id, client] of this.clients.entries()) {
         if (client.conn === conn) {
           this.clients.delete(id);
@@ -2494,7 +2536,7 @@ class NetworkManager {
 
     const doSendJoin = () => {
       if (this.hostConn && this.hostConn.open) {
-        console.log('Client gửi CLIENT_JOIN_REQUEST tới Host...');
+        this.logStatus('Gửi yêu cầu tham gia phòng (CLIENT_JOIN_REQUEST)...', 'info');
         this.sendToHost({
           type: 'CLIENT_JOIN_REQUEST',
           nickname: this.myNickname,
@@ -2504,7 +2546,7 @@ class NetworkManager {
     };
 
     conn.on('open', () => {
-      console.log('Client: Kết nối WebRTC tới Host đã OPEN!');
+      this.logStatus('✅ Kết nối WebRTC tới Host đã MỞ (OPEN)! Đang tham gia sảnh...', 'success', '🟢 Kết nối Host thành công', 'badge-connected');
       doSendJoin();
       // Retry sau 500ms, 1000ms, 2000ms nếu chưa nhận được gán ID từ Host
       setTimeout(() => {
@@ -2523,11 +2565,11 @@ class NetworkManager {
     });
 
     conn.on('error', (err) => {
-      console.warn('Client: DataConnection error:', err);
+      this.logStatus(`❌ Lỗi kênh truyền Client: ${err.message || err}`, 'error', '🔴 Lỗi DataChannel', 'badge-error');
     });
 
     conn.on('close', () => {
-      console.log('Client: DataConnection đã đóng.');
+      this.logStatus('🔌 Mất kết nối DataChannel với Host.', 'warn', '⚪ Đã ngắt kết nối', 'badge-idle');
       if (this.game.state === 'PLAYING') {
         alert('Mất kết nối với Chủ phòng (Host)! Đang trở về sảnh chờ...');
         this.game.goToLobby();
@@ -2710,6 +2752,7 @@ class NetworkManager {
         case 'HOST_WELCOME':
           if (!msg.targetClientId || msg.targetClientId === this.myPlayerId || this.myPlayerId === 'p1') {
             this.myPlayerId = msg.assignedId || 'p2';
+            this.logStatus(`🎉 Host đã chào đón! Bạn được gán vị trí: ${this.myPlayerId.toUpperCase()}.`, 'success', `🟢 Đã vào phòng (${this.myPlayerId.toUpperCase()})`, 'badge-connected');
             if (msg.mapId) {
               this.game.applyMapConfig(msg.mapId);
               this.highlightMapCard(msg.mapId);
@@ -2720,6 +2763,7 @@ class NetworkManager {
           break;
 
         case 'ROOM_PLAYERS_UPDATE':
+          this.logStatus(`Đồng bộ danh sách phòng: ${msg.roomPlayers ? msg.roomPlayers.length : 1}/5 người.`, 'info');
           if (msg.mapId) {
             this.game.applyMapConfig(msg.mapId);
             this.highlightMapCard(msg.mapId);

@@ -782,6 +782,94 @@ body {
   animation: pulse 0.7s infinite alternate;
 }
 
+/* BẢNG NHẬT KÝ & TRẠNG THÁI KẾT NỐI MẠNG (DEBUG LOG PANEL) */
+.network-log-panel {
+  margin-top: 10px;
+  background: rgba(10, 15, 29, 0.92);
+  border: 1px solid rgba(0, 210, 211, 0.4);
+  border-radius: 10px;
+  padding: 8px 14px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.net-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.net-log-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #c8d6e5;
+  letter-spacing: 0.5px;
+}
+
+.net-status-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.net-status-badge.badge-idle {
+  background: rgba(255, 255, 255, 0.1);
+  color: #a4b0be;
+}
+
+.net-status-badge.badge-connecting {
+  background: rgba(255, 165, 2, 0.25);
+  color: #ffa502;
+  border: 1px solid #ffa502;
+}
+
+.net-status-badge.badge-connected {
+  background: rgba(46, 213, 115, 0.25);
+  color: #2ed573;
+  border: 1px solid #2ed573;
+}
+
+.net-status-badge.badge-error {
+  background: rgba(255, 71, 87, 0.25);
+  color: #ff4757;
+  border: 1px solid #ff4757;
+}
+
+.net-log-console {
+  max-height: 85px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #dcdde1;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.net-log-console .log-item {
+  margin-bottom: 2px;
+  word-break: break-all;
+}
+
+.net-log-console .log-item.info {
+  color: #48dbfb;
+}
+
+.net-log-console .log-item.success {
+  color: #2ed573;
+}
+
+.net-log-console .log-item.warn {
+  color: #ffa502;
+}
+
+.net-log-console .log-item.error {
+  color: #ff6b81;
+}
+
 /* LOBBY MAIN GRID (2 CỘT: TRANG BỊ CỦA BẠN & PHÒNG CHỜ 5 NGƯỜI) */
 .lobby-main-grid {
   display: grid;
