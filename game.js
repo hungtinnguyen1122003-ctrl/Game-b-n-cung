@@ -3002,8 +3002,24 @@ class NetworkManager {
     this.lastStateSyncTime = 0;
 
     // Trạng thái ngắm & di chuyển nội bộ của Client để phản hồi tức thời
-    this.localAimAngle = -Math.PI * 0.4;
-    this.localFacingRight = true;
+    // Cấu hình Metered Open Relay TURN
+    this.meteredAppDomain = localStorage.getItem('metered_app_domain') || '';
+    this.meteredApiKey = localStorage.getItem('metered_api_key') || '';
+    this.cachedIceServers = null;
+    this.lastIceServersFetchTime = 0;
+
+    // Đọc tham số URL ghi đè (nếu bạn bè gửi link kèm cấu hình TURN)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlMapp = urlParams.get('mapp');
+      const urlMkey = urlParams.get('mkey');
+      if (urlMapp && urlMkey) {
+        this.meteredAppDomain = urlMapp.trim();
+        this.meteredApiKey = urlMkey.trim();
+        localStorage.setItem('metered_app_domain', this.meteredAppDomain);
+        localStorage.setItem('metered_api_key', this.meteredApiKey);
+      }
+    } catch(e){}
   }
 
   init() {
@@ -3014,6 +3030,9 @@ class NetworkManager {
     const btnReady = document.getElementById('btn-ready-toggle');
     const joinInput = document.getElementById('join-room-code-input');
     const nickInput = document.getElementById('player-nickname-input');
+
+    // Khởi tạo giao diện cài đặt Metered TURN
+    this.initMeteredConfigUI();
 
     if (nickInput) {
       nickInput.addEventListener('input', () => {
@@ -3068,12 +3087,15 @@ class NetworkManager {
     if (btnCopyLink) {
       btnCopyLink.addEventListener('click', () => {
         if (!this.roomCode) return;
-        const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${this.roomCode}`;
+        let inviteUrl = `${window.location.origin}${window.location.pathname}?room=${this.roomCode}`;
+        // Nếu Host đã cài Metered TURN, tự động đính kèm vào link để người chơi khác click vào là thông mạng luôn
+        if (this.meteredAppDomain && this.meteredApiKey) {
+          inviteUrl += `&mapp=${encodeURIComponent(this.meteredAppDomain)}&mkey=${encodeURIComponent(this.meteredApiKey)}`;
+        }
         navigator.clipboard.writeText(inviteUrl).then(() => {
           btnCopyLink.innerText = '✅ Đã Copy Link!';
           setTimeout(() => { btnCopyLink.innerText = '🔗 Copy Link Mời'; }, 2500);
         }).catch(() => {
-          // Fallback nếu clipboard API bị chặn
           prompt('Copy link mời bên dưới gửi cho bạn bè:', inviteUrl);
           btnCopyLink.innerText = '🔗 Copy Link Mời';
         });
@@ -3087,7 +3109,7 @@ class NetworkManager {
       if (queryRoom) {
         const cleanQueryRoom = queryRoom.trim().toUpperCase();
         if (joinInput) joinInput.value = cleanQueryRoom;
-        // Chờ 500ms sau khi trang load xong thì tự động join phòng
+        // Chờ 600ms sau khi trang load xong thì tự động join phòng
         setTimeout(() => {
           console.log('Tự động tham gia phòng từ URL:', cleanQueryRoom);
           this.joinRoom(cleanQueryRoom);
@@ -3121,6 +3143,190 @@ class NetworkManager {
     }
   }
 
+  initMeteredConfigUI() {
+    const modal = document.getElementById('metered-config-modal');
+    const btnOpen = document.getElementById('btn-open-metered-config');
+    const btnClose = document.getElementById('btn-close-metered-modal');
+    const appInput = document.getElementById('metered-app-input');
+    const keyInput = document.getElementById('metered-key-input');
+    const btnTogglePwd = document.getElementById('btn-toggle-metered-key');
+    const btnTest = document.getElementById('btn-test-metered');
+    const btnSave = document.getElementById('btn-save-metered');
+    const btnClear = document.getElementById('btn-clear-metered');
+    const statusBox = document.getElementById('metered-status-box');
+    const statusText = document.getElementById('metered-status-text');
+
+    if (!modal) return;
+
+    // Cập nhật giá trị ban đầu vào input
+    if (appInput) appInput.value = this.meteredAppDomain || '';
+    if (keyInput) keyInput.value = this.meteredApiKey || '';
+
+    const setStatus = (msg, state = 'info') => {
+      if (!statusBox || !statusText) return;
+      statusBox.className = `metered-status-box ${state}`;
+      const icon = state === 'success' ? '✅' : (state === 'error' ? '❌' : (state === 'loading' ? '⏳' : 'ℹ️'));
+      statusBox.querySelector('.status-icon').innerText = icon;
+      statusText.innerText = msg;
+    };
+
+    if (this.meteredAppDomain && this.meteredApiKey) {
+      setStatus(`Đang áp dụng: ${this.meteredAppDomain} (Sẵn sàng vượt NAT)`, 'success');
+    }
+
+    if (btnOpen) {
+      btnOpen.addEventListener('click', () => {
+        if (appInput) appInput.value = this.meteredAppDomain || '';
+        if (keyInput) keyInput.value = this.meteredApiKey || '';
+        modal.classList.remove('hidden');
+      });
+    }
+
+    if (btnClose) {
+      btnClose.addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.add('hidden');
+    });
+
+    if (btnTogglePwd && keyInput) {
+      btnTogglePwd.addEventListener('click', () => {
+        keyInput.type = keyInput.type === 'password' ? 'text' : 'password';
+      });
+    }
+
+    if (btnTest) {
+      btnTest.addEventListener('click', async () => {
+        const app = appInput ? appInput.value.trim() : '';
+        const key = keyInput ? keyInput.value.trim() : '';
+        if (!app || !key) {
+          setStatus('Vui lòng nhập đầy đủ App Domain và API Key!', 'error');
+          return;
+        }
+
+        setStatus('Đang gửi truy vấn kiểm tra tới máy chủ Metered.ca...', 'loading');
+        try {
+          const servers = await this.queryMeteredApi(app, key);
+          if (servers && servers.length > 0) {
+            const turnCount = servers.filter(s => Array.isArray(s.urls) ? s.urls.some(u => u.startsWith('turn')) : (s.urls || '').startsWith('turn')).length;
+            setStatus(`Kết nối thành công! Nhận được ${servers.length} ICE Server (${turnCount} TURN servers).`, 'success');
+          } else {
+            setStatus('Metered trả về danh sách trống hoặc API Key không hợp lệ.', 'error');
+          }
+        } catch (err) {
+          setStatus(`Lỗi kết nối Metered: ${err.message}`, 'error');
+        }
+      });
+    }
+
+    if (btnSave) {
+      btnSave.addEventListener('click', async () => {
+        const app = appInput ? appInput.value.trim() : '';
+        const key = keyInput ? keyInput.value.trim() : '';
+        this.meteredAppDomain = app;
+        this.meteredApiKey = key;
+        localStorage.setItem('metered_app_domain', app);
+        localStorage.setItem('metered_api_key', key);
+        this.cachedIceServers = null; // Reset cache để tải lại
+        this.logStatus(`Đã lưu cấu hình Metered TURN (${app || 'Trống'})`, 'success');
+        modal.classList.add('hidden');
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        if (confirm('Bạn có chắc muốn xóa thông tin Metered đã lưu?')) {
+          this.meteredAppDomain = '';
+          this.meteredApiKey = '';
+          localStorage.removeItem('metered_app_domain');
+          localStorage.removeItem('metered_api_key');
+          this.cachedIceServers = null;
+          if (appInput) appInput.value = '';
+          if (keyInput) keyInput.value = '';
+          setStatus('Đã xóa cấu hình Metered.', 'info');
+          this.logStatus('Đã xóa cấu hình Metered TURN. Hệ thống sẽ dùng STUN công cộng mặc định.', 'warn');
+        }
+      });
+    }
+  }
+
+  // Gọi API Metered REST để lấy thông tin xác thực TURN mới nhất
+  async queryMeteredApi(appDomain, apiKey) {
+    let cleanDomain = appDomain.trim();
+    if (cleanDomain.startsWith('https://')) cleanDomain = cleanDomain.substring(8);
+    if (cleanDomain.startsWith('http://')) cleanDomain = cleanDomain.substring(7);
+    cleanDomain = cleanDomain.replace(/\/+$/, '');
+    if (!cleanDomain.includes('.')) {
+      cleanDomain = `${cleanDomain}.metered.ca`;
+    }
+
+    const apiUrl = `https://${cleanDomain}/api/v1/turn/credentials?apiKey=${encodeURIComponent(apiKey.trim())}`;
+    const response = await fetch(apiUrl, { method: 'GET' });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('Dữ liệu trả về không phải là danh sách ICE Servers.');
+    }
+    return data;
+  }
+
+  async fetchIceServers() {
+    // Nếu có cache hợp lệ trong vòng 10 phút thì dùng lại
+    const now = Date.now();
+    if (this.cachedIceServers && (now - this.lastIceServersFetchTime < 10 * 60 * 1000)) {
+      return this.cachedIceServers;
+    }
+
+    if (this.meteredAppDomain && this.meteredApiKey) {
+      try {
+        this.logStatus(`Đang lấy danh sách TURN IceServers từ Metered (${this.meteredAppDomain})...`, 'info');
+        const meteredServers = await this.queryMeteredApi(this.meteredAppDomain, this.meteredApiKey);
+        if (meteredServers && meteredServers.length > 0) {
+          // Kết hợp thêm STUN Google để tạo kết nối P2P nhanh nhất nếu cùng mạng
+          const combinedServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            ...meteredServers
+          ];
+          this.cachedIceServers = combinedServers;
+          this.lastIceServersFetchTime = now;
+          this.logStatus(`✅ Tải thành công ${meteredServers.length} Relay Server từ Metered.ca (Sẵn sàng xuyên NAT).`, 'success');
+          return this.cachedIceServers;
+        }
+      } catch (err) {
+        this.logStatus(`⚠️ Lỗi tải TURN từ Metered: ${err.message}. Sử dụng STUN công cộng dự phòng.`, 'warn');
+      }
+    }
+
+    // Dự phòng mặc định: STUN + OpenRelay công cộng
+    return [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ];
+  }
+
   logStatus(msg, type = 'info', badgeText = null, badgeClass = null) {
     console.log(`[NET-${type.toUpperCase()}] ${msg}`);
     const consoleEl = document.getElementById('net-log-console');
@@ -3146,50 +3352,39 @@ class NetworkManager {
     return 'AGY-' + Math.floor(1000 + Math.random() * 9000);
   }
 
-  getPeerConfig() {
+  getPeerConfig(iceServers = null) {
+    const servers = iceServers || [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      {
+        urls: 'turn:openrelay.metered.ca:80',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turn:openrelay.metered.ca:443',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      },
+      {
+        urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+        username: 'openrelayproject',
+        credential: 'openrelayproject'
+      }
+    ];
+
     return {
       debug: 2,
       config: {
-        iceServers: [
-          // STUN Google
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          { urls: 'stun:stun3.l.google.com:19302' },
-          { urls: 'stun:stun4.l.google.com:19302' },
-          // STUN Cloudflare & Twilio & Mozilla
-          { urls: 'stun:stun.cloudflare.com:3478' },
-          { urls: 'stun:global.stun.twilio.com:3478' },
-          { urls: 'stun:stun.services.mozilla.com' },
-          // TURN Server OpenRelay (hỗ trợ chuyển tiếp qua Internet / 4G / Wi-Fi khác nhau)
-          {
-            urls: 'turn:openrelay.metered.ca:80',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          },
-          {
-            urls: 'turns:openrelay.metered.ca:443?transport=tcp',
-            username: 'openrelayproject',
-            credential: 'openrelayproject'
-          }
-        ],
+        iceServers: servers,
         iceTransportPolicy: 'all',
         iceCandidatePoolSize: 10
       }
     };
   }
 
-  createRoom() {
+  async createRoom() {
     this.cleanup();
     const code = this.generateRoomCode();
     this.roomCode = code;
@@ -3215,8 +3410,9 @@ class NetworkManager {
 
     if (typeof Peer !== 'undefined') {
       try {
+        const iceServers = await this.fetchIceServers();
         this.logStatus(`Đăng ký Peer ID: ${peerId} với PeerJS Server...`, 'info');
-        this.peer = new Peer(peerId, this.getPeerConfig());
+        this.peer = new Peer(peerId, this.getPeerConfig(iceServers));
 
         this.peer.on('open', (id) => {
           this.logStatus(`✅ Host mở phòng thành công! Peer ID: ${id}. Sẵn sàng đón người chơi khác IP.`, 'success', '🟢 Sẵn sàng nhận khách', 'badge-connected');
@@ -3254,7 +3450,7 @@ class NetworkManager {
     this.updateLobbyRoomUI();
   }
 
-  joinRoom(code) {
+  async joinRoom(code) {
     if (!code) return;
     this.cleanup();
     this.roomCode = code;
@@ -3279,7 +3475,8 @@ class NetworkManager {
 
     if (typeof Peer !== 'undefined') {
       try {
-        this.peer = new Peer(this.getPeerConfig());
+        const iceServers = await this.fetchIceServers();
+        this.peer = new Peer(this.getPeerConfig(iceServers));
 
         this.peer.on('open', (myPeerId) => {
           this.logStatus(`Đã kết nối máy chủ báo hiệu. Client ID: ${myPeerId}. Bắt đầu liên kết tới Host (${hostPeerId})...`, 'info');

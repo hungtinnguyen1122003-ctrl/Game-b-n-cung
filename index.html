@@ -102,8 +102,13 @@
           <!-- Bảng hiển thị trực quan Trạng Thái Kết Nối & Nhật Ký Mạng (Logs) -->
           <div class="network-log-panel" id="network-log-panel">
             <div class="net-log-header">
-              <span class="net-log-title">📡 TRẠNG THÁI KẾT NỐI (NETWORK LOGS):</span>
-              <span id="net-conn-status-badge" class="net-status-badge badge-idle">⚪ Chưa kết nối</span>
+              <div class="net-log-header-left">
+                <span class="net-log-title">📡 TRẠNG THÁI KẾT NỐI (NETWORK LOGS):</span>
+                <span id="net-conn-status-badge" class="net-status-badge badge-idle">⚪ Chưa kết nối</span>
+              </div>
+              <div class="net-log-header-right">
+                <button type="button" id="btn-open-metered-config" class="btn-metered-config">⚙️ Cấu Hình Metered (TURN Khác IP)</button>
+              </div>
             </div>
             <div class="net-log-console" id="net-log-console">
               <div class="log-item info">⚡ Hệ thống sẵn sàng. Bấm "Tạo Phòng Mới" hoặc "Vào Phòng" để bắt đầu.</div>
@@ -257,6 +262,65 @@
           <button id="btn-rematch" class="btn-primary">🔄 Tái Đấu Ngay</button>
           <button id="btn-return-lobby" class="btn-secondary">🏠 Về Sảnh Chờ / Đổi Trang Bị</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CẤU HÌNH METERED OPEN RELAY (TURN/STUN CHO KHÁC MẠNG IP/NAT) -->
+  <div id="metered-config-modal" class="modal-overlay hidden">
+    <div class="modal-card metered-modal-card">
+      <div class="metered-modal-header">
+        <div class="metered-modal-title">
+          <span class="icon">🌐</span>
+          <h3>CẤU HÌNH METERED OPEN RELAY (TURN SERVER)</h3>
+        </div>
+        <button type="button" id="btn-close-metered-modal" class="btn-modal-close" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="metered-modal-body">
+        <p class="metered-desc">
+          Khi chơi qua các mạng Wi-Fi khác nhau, 4G, hoặc bị kẹt sau tường lửa NAT/CGNAT, WebRTC cần <strong>TURN Server có xác thực</strong> để chuyển tiếp dữ liệu xuyên NAT.
+        </p>
+
+        <div class="metered-field-group">
+          <label for="metered-app-input">App Domain / Tên App:</label>
+          <div class="metered-input-wrap">
+            <input type="text" id="metered-app-input" placeholder="VD: mygame.metered.ca hoặc mygame" spellcheck="false" autocomplete="off">
+          </div>
+          <small class="field-hint">Nhập tên App bạn đã tạo trên metered.ca (ví dụ: <code>mygame.metered.ca</code>)</small>
+        </div>
+
+        <div class="metered-field-group">
+          <label for="metered-key-input">API Key bí mật:</label>
+          <div class="metered-input-wrap">
+            <input type="password" id="metered-key-input" placeholder="VD: abc123def456..." spellcheck="false" autocomplete="off">
+            <button type="button" id="btn-toggle-metered-key" class="btn-toggle-pwd" title="Hiện/Ẩn Key">👁️</button>
+          </div>
+          <small class="field-hint">Metered cung cấp 50 GB băng thông TURN miễn phí mỗi tháng.</small>
+        </div>
+
+        <div class="metered-status-box" id="metered-status-box">
+          <span class="status-icon">ℹ️</span>
+          <span class="status-text" id="metered-status-text">Chưa kiểm tra. Nhập thông tin và bấm "Kiểm Tra Kết Nối".</span>
+        </div>
+
+        <div class="metered-guide-summary">
+          <details>
+            <summary>📖 Xem nhanh cách lấy API Key miễn phí (3 bước)</summary>
+            <ol>
+              <li>Truy cập <a href="https://www.metered.ca/tools/openrelay/" target="_blank" rel="noreferrer">metered.ca/tools/openrelay</a> và đăng ký tài khoản miễn phí.</li>
+              <li>Tại trang Dashboard, bấm <strong>Create App</strong> (đặt tên bất kỳ, ví dụ: <code>cungdau</code>).</li>
+              <li>Vào app vừa tạo, copy <strong>App Name</strong> (hoặc Domain) và <strong>API Key</strong> rồi dán vào đây!</li>
+            </ol>
+            <p><em>* Mẹo: Khi bạn tạo phòng và bấm "🔗 Copy Link Mời", link sẽ tự đính kèm cấu hình để bạn bè vào ngay mà không cần cài đặt!</em></p>
+          </details>
+        </div>
+      </div>
+
+      <div class="metered-modal-footer">
+        <button type="button" id="btn-test-metered" class="btn-secondary">🔍 Kiểm Tra Kết Nối</button>
+        <button type="button" id="btn-clear-metered" class="btn-sm-action btn-danger">Xóa Cấu Hình</button>
+        <button type="button" id="btn-save-metered" class="btn-primary">💾 Lưu Cấu Hình</button>
       </div>
     </div>
   </div>
