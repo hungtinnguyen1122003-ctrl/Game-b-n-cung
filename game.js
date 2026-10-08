@@ -722,12 +722,22 @@ class Particle {
     this.size = size;
     this.maxLife = life;
     this.life = life;
-    this.type = type; // 'circle', 'leaf', 'spark', 'smoke', 'shockwave', 'ghost'
+    this.type = type; // 'circle', 'leaf', 'spark', 'smoke', 'shockwave', 'ghost', 'ice', 'bubble', 'cinder', 'poison_drip', 'wind_slash'
     this.angle = Math.random() * Math.PI * 2;
     this.vAngle = (Math.random() - 0.5) * 6;
+    this.gravity = 0;
+    this.friction = 1.0;
+    this.glow = false;
+    this.glowColor = color;
   }
 
   update(dt) {
+    if (this.gravity) this.vy += this.gravity * dt;
+    if (this.friction && this.friction !== 1.0) {
+      const f = Math.pow(this.friction, dt * 60);
+      this.vx *= f;
+      this.vy *= f;
+    }
     this.x += this.vx * dt;
     this.y += this.vy * dt;
     this.angle += this.vAngle * dt;
@@ -742,48 +752,128 @@ class Particle {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
 
+    if (this.glow) {
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.glowColor || this.color;
+    }
+
     if (this.type === 'shockwave') {
-      // Sóng xung kích hình elip khi kích hoạt cú nhảy x2
       ctx.strokeStyle = this.color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3.5;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = this.color;
       ctx.beginPath();
-      ctx.ellipse(0, 0, (1 - alpha) * 36 + 10, (1 - alpha) * 14 + 4, 0, 0, Math.PI * 2);
+      const rX = (1 - alpha) * (this.size * 14) + 8;
+      const rY = (1 - alpha) * (this.size * 6) + 3;
+      ctx.ellipse(0, 0, rX, rY, 0, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (this.type === 'ice') {
+      // Tinh thể băng sắc lạnh, hình thoi đa giác phát quang tuyết trắng
+      ctx.fillStyle = this.color;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#70a1ff';
+      const s = this.size;
+      ctx.beginPath();
+      ctx.moveTo(0, -s * 1.6);
+      ctx.lineTo(s * 0.9, 0);
+      ctx.lineTo(0, s * 1.6);
+      ctx.lineTo(-s * 0.9, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Tâm lõi tuyết trắng sáng
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'wind_slash') {
+      // Lưỡi dao gió hình vòng cung mờ cuốn theo
+      ctx.strokeStyle = this.color || 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#ffffff';
+      ctx.beginPath();
+      const radius = this.size * 4 * (1.8 - alpha * 0.8);
+      ctx.arc(0, 0, radius, -Math.PI * 0.35, Math.PI * 0.35);
+      ctx.stroke();
+    } else if (this.type === 'bubble') {
+      // Bong bóng nước trong vắt lấp lánh phản quang
+      const r = this.size * 1.2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.fillStyle = 'rgba(72, 219, 251, 0.35)';
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Điểm bóng sáng trắng
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(-r * 0.35, -r * 0.35, r * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'cinder') {
+      // Hạt tàn tro/lửa chớp nháy bốc lên cao
+      ctx.fillStyle = this.color;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#ff4757';
+      const flick = 0.8 + Math.sin(Date.now() / 80 + this.x) * 0.2;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size * flick, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'poison_drip') {
+      // Giọt độc uốn lượn rơi xuống
+      ctx.fillStyle = this.color;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#a55eea';
+      const s = this.size;
+      ctx.beginPath();
+      ctx.arc(0, s * 0.5, s, 0, Math.PI);
+      ctx.lineTo(0, -s * 1.4);
+      ctx.closePath();
+      ctx.fill();
     } else if (this.type === 'ghost') {
       // Hồn ma chibi bay lên khi gục ngã
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#ffffff';
       ctx.beginPath();
       ctx.arc(0, 0, 10, 0, Math.PI * 2);
       ctx.fill();
-      // Đuôi hồn ma
       ctx.beginPath();
       ctx.moveTo(-10, 0); ctx.lineTo(-4, 14); ctx.lineTo(0, 8); ctx.lineTo(4, 14); ctx.lineTo(10, 0);
       ctx.closePath();
       ctx.fill();
-      // Mắt hồn ma chibi
       ctx.fillStyle = '#2f3542';
       ctx.beginPath();
       ctx.arc(-3, -2, 2, 0, Math.PI * 2);
       ctx.arc(3, -2, 2, 0, Math.PI * 2);
       ctx.fill();
     } else if (this.type === 'leaf') {
+      // Lá cây ngọc lục bảo xoay tròn
       ctx.fillStyle = this.color;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = '#10ac84';
       ctx.beginPath();
-      ctx.ellipse(0, 0, this.size * 1.6, this.size * 0.7, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, this.size * 1.8, this.size * 0.8, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = '#10ac84';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(-this.size * 1.5, 0);
-      ctx.lineTo(this.size * 1.5, 0);
+      ctx.moveTo(-this.size * 1.7, 0);
+      ctx.lineTo(this.size * 1.7, 0);
       ctx.stroke();
     } else if (this.type === 'spark') {
+      // Tia lửa phát quang kéo dài theo hướng bay
       ctx.fillStyle = this.color;
-      ctx.fillRect(-this.size * 1.5, -this.size / 2, this.size * 3, this.size);
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = this.color;
+      ctx.fillRect(-this.size * 1.8, -this.size * 0.6, this.size * 3.6, this.size * 1.2);
     } else if (this.type === 'smoke') {
+      // Đám khói xám xịt hoặc khí độc lan tỏa mềm mại
       ctx.fillStyle = this.color;
       ctx.beginPath();
-      ctx.arc(0, 0, this.size * (2 - alpha), 0, Math.PI * 2);
+      ctx.arc(0, 0, this.size * (1.8 - alpha * 0.6), 0, Math.PI * 2);
       ctx.fill();
     } else {
       ctx.fillStyle = this.color;
@@ -981,25 +1071,81 @@ class Arrow {
     const backY = this.y - Math.sin(this.angle) * 16;
 
     if (el === 'lightning') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*50, (Math.random()-0.5)*50, '#feca57', 3, 0.2, 'spark'));
-      if (Math.random() < 0.3) {
-        game.lightnings.push(new LightningBolt(backX, backY, backX + (Math.random()-0.5)*30, backY + (Math.random()-0.5)*30, '#ffd32a', 3));
+      // Hệ Điện: Luồng điện zích zắc ngẫu nhiên và hạt tia lửa văng ra
+      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*90, (Math.random()-0.5)*90, '#ffd32a', 3, 0.22, 'spark'));
+      if (Math.random() < 0.45) {
+        const offsetAng = (Math.random() - 0.5) * Math.PI;
+        const arcLen = 20 + Math.random() * 25;
+        const targetX = backX + Math.cos(this.angle + offsetAng) * arcLen;
+        const targetY = backY + Math.sin(this.angle + offsetAng) * arcLen;
+        game.lightnings.push(new LightningBolt(backX, backY, targetX, targetY, '#fff200', 3));
       }
     } else if (el === 'wood') {
-      game.particles.push(new Particle(backX, backY, -this.vx * 0.1 + (Math.random()-0.5)*30, 20 + Math.random()*20, '#26de81', 5, 0.6, 'leaf'));
+      // Hệ Mộc: Vệt sáng li ti rơi rụng như lá cây
+      if (Math.random() < 0.6) {
+        const leafP = new Particle(backX, backY, -this.vx * 0.08 + (Math.random()-0.5)*30, 25 + Math.random()*25, '#2ed573', 4.5, 0.7, 'leaf');
+        leafP.gravity = 50;
+        game.particles.push(leafP);
+      }
+      const speck = new Particle(backX, backY, (Math.random()-0.5)*20, (Math.random()-0.5)*20, '#55efc4', 2, 0.4, 'spark');
+      speck.glow = true;
+      speck.glowColor = '#2ed573';
+      game.particles.push(speck);
     } else if (el === 'fire') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, -30 + Math.random()*-20, '#ff4757', 4, 0.35, 'circle'));
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*15, -15, '#ffa502', 2.5, 0.25, 'circle'));
+      // Hệ Lửa: Quả cầu lửa xé gió, đuôi rực sáng
+      for (let i = 0; i < 2; i++) {
+        const flameP = new Particle(backX, backY, (Math.random()-0.5)*25 - this.vx * 0.08, -35 + Math.random()*-20, i === 0 ? '#fffa65' : '#ff4757', 3.5 + Math.random()*3, 0.4, 'circle');
+        flameP.gravity = -50;
+        flameP.glow = true;
+        flameP.glowColor = '#ff4757';
+        game.particles.push(flameP);
+      }
+      if (Math.random() < 0.4) {
+        const cinder = new Particle(backX, backY, (Math.random()-0.5)*30, -20, '#ffa502', 2, 0.5, 'cinder');
+        game.particles.push(cinder);
+      }
     } else if (el === 'ice') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, (Math.random()-0.5)*20, '#70a1ff', 3, 0.4, 'spark'));
+      // Hệ Băng: Vệt sương mù trắng và tinh thể tuyết
+      const mist = new Particle(backX, backY, (Math.random()-0.5)*15, (Math.random()-0.5)*15, 'rgba(255,255,255,0.7)', 4, 0.4, 'smoke');
+      game.particles.push(mist);
+      if (Math.random() < 0.5) {
+        const snow = new Particle(backX, backY, (Math.random()-0.5)*25, 20 + Math.random()*20, '#dff9fb', 3, 0.55, 'ice');
+        snow.gravity = 60;
+        game.particles.push(snow);
+      }
     } else if (el === 'water') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*30, 30, '#1e90ff', 3.5, 0.3, 'circle'));
+      // Hệ Nước: Dải lụa nước mờ ảo và bong bóng nhỏ bay lên
+      const silk = new Particle(backX, backY, -this.vx * 0.06, (Math.random()-0.5)*15, 'rgba(0, 210, 211, 0.65)', 4, 0.35, 'circle');
+      game.particles.push(silk);
+      if (Math.random() < 0.5) {
+        const bub = new Particle(backX, backY, (Math.random()-0.5)*20, -35 - Math.random()*20, '#ffffff', 2.5 + Math.random()*2, 0.6, 'bubble');
+        bub.gravity = -40;
+        game.particles.push(bub);
+      }
     } else if (el === 'poison') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*20, -10, '#a55eea', 4.5, 0.4, 'smoke'));
+      // Hệ Độc: Vệt khí độc uốn lượn và giọt độc rơi xuống
+      const fume = new Particle(backX, backY, (Math.random()-0.5)*20, (Math.random()-0.5)*20, 'rgba(142, 68, 173, 0.75)', 5, 0.5, 'smoke');
+      game.particles.push(fume);
+      if (Math.random() < 0.35) {
+        const drip = new Particle(backX, backY, (Math.random()-0.5)*15, 30 + Math.random()*25, '#2ed573', 2.5, 0.45, 'poison_drip');
+        drip.gravity = 90;
+        game.particles.push(drip);
+      }
     } else if (el === 'explosion') {
-      game.particles.push(new Particle(backX, backY, (Math.random()-0.5)*40, (Math.random()-0.5)*40, '#ff6b6b', 3.5, 0.3, 'spark'));
+      // Hệ Nổ: Vệt khói xám xịt và tàn tro bay lơ lửng phía sau
+      const smokeP = new Particle(backX, backY, (Math.random()-0.5)*25, (Math.random()-0.5)*25, 'rgba(47, 53, 66, 0.7)', 5.5, 0.55, 'smoke');
+      game.particles.push(smokeP);
+      if (Math.random() < 0.5) {
+        const ember = new Particle(backX, backY, (Math.random()-0.5)*35, -20 - Math.random()*25, '#ff793f', 2.5, 0.5, 'cinder');
+        ember.gravity = -25;
+        game.particles.push(ember);
+      }
     } else if (el === 'wind') {
-      game.particles.push(new Particle(backX, backY, -this.vx * 0.2, (Math.random()-0.5)*20, 'rgba(255,255,255,0.8)', 2.5, 0.2, 'circle'));
+      // Hệ Gió: Các đường cắt gió (vòng cung mờ) cuốn theo
+      if (Math.random() < 0.6) {
+        const slash = new Particle(backX, backY, -this.vx * 0.12, (Math.random()-0.5)*15, 'rgba(255, 255, 255, 0.85)', 3, 0.3, 'wind_slash');
+        game.particles.push(slash);
+      }
     }
   }
 
@@ -1026,40 +1172,149 @@ class Arrow {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
 
-    ctx.strokeStyle = '#576574';
-    ctx.lineWidth = 3.5;
+    const el = this.weapon.element;
+    const glow = this.getGlowColor();
+
+    // 1. Thân mũi tên (Shaft): LinearGradient kim loại thanh thoát bóng bẩy
+    const shaftGrad = ctx.createLinearGradient(-26, 0, 16, 0);
+    shaftGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+    shaftGrad.addColorStop(0.5, glow);
+    shaftGrad.addColorStop(1, '#ffffff');
+
+    ctx.strokeStyle = shaftGrad;
+    ctx.lineWidth = 3.2;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(-22, 0);
+    ctx.moveTo(-24, 0);
     ctx.lineTo(14, 0);
     ctx.stroke();
 
-    ctx.fillStyle = '#ff4757';
+    // 2. Cánh đuôi mũi tên (Fletching): Tinh gọn khí động học
+    ctx.fillStyle = glow;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = glow;
     ctx.beginPath();
-    ctx.moveTo(-22, 0);
-    ctx.lineTo(-28, -5);
-    ctx.lineTo(-24, 0);
-    ctx.lineTo(-28, 5);
+    ctx.moveTo(-24, 0);
+    ctx.lineTo(-30, -5.5);
+    ctx.lineTo(-26, 0);
+    ctx.lineTo(-30, 5.5);
     ctx.closePath();
     ctx.fill();
 
-    ctx.fillStyle = '#ffa502';
-    if (this.weapon.tier === 'SS') ctx.fillStyle = '#00d2d3';
-    if (this.weapon.tier === 'SSS') ctx.fillStyle = '#ff9f43';
+    // 3. Đầu mũi tên (Arrowhead): Thiết kế riêng biệt theo từng hệ nguyên tố với Glow & Gradient
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = glow;
 
-    ctx.beginPath();
-    ctx.moveTo(22, 0);
-    ctx.lineTo(12, -6);
-    ctx.lineTo(14, 0);
-    ctx.lineTo(12, 6);
-    ctx.closePath();
-    ctx.fill();
+    if (el === 'fire') {
+      // Hệ Lửa: Quả cầu lửa xé gió (RadialGradient bốc cháy)
+      const fireGrad = ctx.createRadialGradient(16, 0, 1, 16, 0, 9);
+      fireGrad.addColorStop(0, '#ffffff');
+      fireGrad.addColorStop(0.4, '#fffa65');
+      fireGrad.addColorStop(0.8, '#ff4757');
+      fireGrad.addColorStop(1, 'rgba(255, 71, 87, 0)');
+      ctx.fillStyle = fireGrad;
+      ctx.beginPath();
+      ctx.arc(16, 0, 9, 0, Math.PI * 2);
+      ctx.fill();
 
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = this.getGlowColor();
-    ctx.fillStyle = this.getGlowColor();
-    ctx.beginPath();
-    ctx.arc(16, 0, 4.5, 0, Math.PI * 2);
-    ctx.fill();
+      // Lưỡi lửa nhọn phía trước
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(25, 0);
+      ctx.lineTo(13, -5);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(13, 5);
+      ctx.closePath();
+      ctx.fill();
+    } else if (el === 'ice') {
+      // Hệ Băng: Mũi tinh thể băng xanh lam nhạt, sắc cạnh, tỏa sương
+      const iceGrad = ctx.createLinearGradient(12, 0, 24, 0);
+      iceGrad.addColorStop(0, '#70a1ff');
+      iceGrad.addColorStop(0.6, '#dff9fb');
+      iceGrad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = iceGrad;
+      ctx.beginPath();
+      ctx.moveTo(24, 0);
+      ctx.lineTo(12, -7);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(12, 7);
+      ctx.closePath();
+      ctx.fill();
+    } else if (el === 'lightning') {
+      // Hệ Điện: Mũi tên chớp giật vàng chanh chói lòa
+      ctx.fillStyle = Math.random() < 0.5 ? '#ffffff' : '#ffd32a';
+      ctx.beginPath();
+      ctx.moveTo(25, 0);
+      ctx.lineTo(14, -6);
+      ctx.lineTo(18, 0);
+      ctx.lineTo(14, 6);
+      ctx.closePath();
+      ctx.fill();
+    } else if (el === 'water') {
+      // Hệ Nước: Mũi nước hình giọt lệ bóng bẩy
+      const waterGrad = ctx.createRadialGradient(18, -1, 1, 18, 0, 8);
+      waterGrad.addColorStop(0, '#ffffff');
+      waterGrad.addColorStop(0.5, '#48dbfb');
+      waterGrad.addColorStop(1, '#0984e3');
+      ctx.fillStyle = waterGrad;
+      ctx.beginPath();
+      ctx.moveTo(23, 0);
+      ctx.quadraticCurveTo(14, -7, 12, 0);
+      ctx.quadraticCurveTo(14, 7, 23, 0);
+      ctx.fill();
+    } else if (el === 'wood') {
+      // Hệ Mộc: Mũi gai ngọc lục bảo phát sáng xanh
+      const woodGrad = ctx.createLinearGradient(12, 0, 24, 0);
+      woodGrad.addColorStop(0, '#10ac84');
+      woodGrad.addColorStop(0.7, '#2ed573');
+      woodGrad.addColorStop(1, '#55efc4');
+      ctx.fillStyle = woodGrad;
+      ctx.beginPath();
+      ctx.moveTo(23, 0);
+      ctx.lineTo(13, -5.5);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(13, 5.5);
+      ctx.closePath();
+      ctx.fill();
+    } else if (el === 'wind') {
+      // Hệ Gió: Mũi tên gió mờ ảo thanh thoát
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.beginPath();
+      ctx.moveTo(24, 0);
+      ctx.lineTo(12, -5);
+      ctx.lineTo(14, 0);
+      ctx.lineTo(12, 5);
+      ctx.closePath();
+      ctx.fill();
+    } else if (el === 'poison') {
+      // Hệ Độc: Mũi tên độc tím pha xanh nhỏ giọt
+      const poiGrad = ctx.createLinearGradient(12, 0, 23, 0);
+      poiGrad.addColorStop(0, '#2c2c54');
+      poiGrad.addColorStop(0.6, '#8e44ad');
+      poiGrad.addColorStop(1, '#2ed573');
+      ctx.fillStyle = poiGrad;
+      ctx.beginPath();
+      ctx.moveTo(23, 0);
+      ctx.lineTo(13, -6);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(13, 6);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // Hệ Nổ & Cung cơ bản
+      const expGrad = ctx.createLinearGradient(12, 0, 24, 0);
+      expGrad.addColorStop(0, '#ff793f');
+      expGrad.addColorStop(0.7, '#ff3838');
+      expGrad.addColorStop(1, '#ffffff');
+      ctx.fillStyle = expGrad;
+      ctx.beginPath();
+      ctx.moveTo(24, 0);
+      ctx.lineTo(13, -6);
+      ctx.lineTo(15, 0);
+      ctx.lineTo(13, 6);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     ctx.restore();
   }
@@ -1070,8 +1325,8 @@ class Arrow {
       case 'ice': return '#70a1ff';
       case 'lightning': return '#ffd32a';
       case 'poison': return '#a55eea';
-      case 'water': return '#2ed573';
-      case 'wood': return '#26de81';
+      case 'water': return '#00d2d3';
+      case 'wood': return '#2ed573';
       case 'wind': return '#ffffff';
       case 'explosion': return '#ff3838';
       default: return '#ffa502';
@@ -1828,13 +2083,17 @@ class Character {
       });
     }
 
-    for (let i = 0; i < 15; i++) {
-      game.particles.push(new Particle(
-        this.x, this.y - 28,
-        (Math.random() - 0.5) * 120,
-        (Math.random() - 0.5) * 120 - 40,
-        isCrit ? '#ff3838' : '#e74c3c', 3.5, 0.4
-      ));
+    if (typeof game !== 'undefined' && game.spawnElementalImpact) {
+      game.spawnElementalImpact(arrow.x, arrow.y, arrow.weapon ? arrow.weapon.element : 'none', isCrit ? 1.4 : 1.05);
+    } else {
+      for (let i = 0; i < 15; i++) {
+        game.particles.push(new Particle(
+          this.x, this.y - 28,
+          (Math.random() - 0.5) * 120,
+          (Math.random() - 0.5) * 120 - 40,
+          isCrit ? '#ff3838' : '#e74c3c', 3.5, 0.4
+        ));
+      }
     }
 
     if (this.hp <= 0) {
@@ -1928,39 +2187,169 @@ class Character {
     const currentH = this.isCrouching ? this.height * 0.65 : this.height;
     const isP1 = this.id === 'p1';
 
-    // 0. HÀO QUANG AURA TRANG BỊ
-    if (this.weapon.tier === 'SSS' || this.chest.tier === 'SSS') {
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = 'rgba(254, 202, 87, 0.7)';
-    } else if (this.weapon.tier === 'SS' || this.chest.tier === 'SS') {
-      ctx.shadowBlur = 12;
-      ctx.shadowColor = 'rgba(0, 210, 211, 0.6)';
+    const armorTier = this.getArmorTierRank();
+
+    // 0. TRƯỜNG LỰC HOÀNG KIM (FORCE FIELD) CẤP SSS LẤP LÁNH CHUYỂN MÀU VÀNG KIM
+    if (armorTier === 'SSS' && this.defeatState === 'ALIVE') {
+      const time = Date.now() / 320;
+      const centerY = this.y - currentH * 0.52;
+      const goldShift = Math.sin(time);
+      const goldShift2 = Math.cos(time * 0.85);
+
+      ctx.save();
+      ctx.shadowBlur = 24 + 8 * Math.sin(time * 2);
+      ctx.shadowColor = '#ffd32a';
+
+      // Chuyển màu vàng kim liên tục: vàng chanh -> vàng kim chói sáng -> hổ phách hoàng gia
+      const ffGrad = ctx.createRadialGradient(
+        this.x, centerY, 8,
+        this.x, centerY, 34
+      );
+      ffGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+      ffGrad.addColorStop(0.5, `rgba(${Math.round(255 - 6 * Math.abs(goldShift))}, ${Math.round(215 + 30 * goldShift)}, ${Math.round(50 + 40 * goldShift2)}, ${0.28 + 0.12 * goldShift})`);
+      ffGrad.addColorStop(0.9, `rgba(255, 215, 0, ${0.46 + 0.16 * goldShift2})`);
+      ffGrad.addColorStop(1, 'rgba(243, 156, 18, 0.14)');
+
+      ctx.fillStyle = ffGrad;
+      ctx.beginPath();
+      ctx.ellipse(this.x, centerY, 28, currentH * 0.58 + 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Vành sóng năng lượng dao động bao quanh trường lực
+      ctx.strokeStyle = `rgba(255, 234, 167, ${0.72 + 0.24 * Math.sin(time * 3)})`;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(this.x, centerY, 28, currentH * 0.58 + 6, Math.sin(time * 0.5) * 0.12, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Đai xoay hạt ánh sáng vàng kim lấp lánh quanh chu vi
+      const ringAngle = time * 2.2;
+      for (let k = 0; k < 4; k++) {
+        const pAng = ringAngle + (k * Math.PI / 2);
+        const px = this.x + Math.cos(pAng) * 28;
+        const py = centerY + Math.sin(pAng) * (currentH * 0.58 + 6);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(px, py, 2.6 + 0.8 * Math.sin(time * 4 + k), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
-    // 1. TỨ CHI
+    // 0B. HÀO QUANG AURA TRANG BỊ THEO ĐẲNG CẤP (A, S, SS, SSS)
+    if (armorTier === 'SSS') {
+      ctx.shadowBlur = 22;
+      ctx.shadowColor = 'rgba(254, 202, 87, 0.85)';
+    } else if (armorTier === 'SS') {
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = 'rgba(0, 210, 211, 0.75)';
+    } else if (armorTier === 'S') {
+      ctx.shadowBlur = 11;
+      ctx.shadowColor = 'rgba(84, 160, 255, 0.65)';
+    } else if (armorTier === 'A') {
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = 'rgba(46, 213, 115, 0.5)';
+    } else {
+      ctx.shadowBlur = 0;
+    }
+
+    // 1. TỨ CHI - ỦNG KIM LOẠI LINEAR GRADIENT
     const legH = currentH * 0.28;
     const legY = this.y - legH;
-    ctx.fillStyle = this.getBootsColor();
-    ctx.fillRect(this.x - 10, legY, 7, legH);
-    ctx.fillRect(this.x + 3, legY, 7, legH);
+    const bootsGrad = ctx.createLinearGradient(this.x - 12, legY, this.x + 12, legY + legH);
+    const bTier = this.boots ? this.boots.tier : 'D';
+    if (bTier === 'SSS') {
+      bootsGrad.addColorStop(0, '#f39c12');
+      bootsGrad.addColorStop(0.3, '#f1c40f');
+      bootsGrad.addColorStop(0.5, '#ffffff'); // Vệt phản quang ánh kim
+      bootsGrad.addColorStop(0.7, '#ffd32a');
+      bootsGrad.addColorStop(1, '#d35400');
+    } else if (bTier === 'SS') {
+      bootsGrad.addColorStop(0, '#006266');
+      bootsGrad.addColorStop(0.35, '#00d2d3');
+      bootsGrad.addColorStop(0.55, '#ffffff');
+      bootsGrad.addColorStop(1, '#0984e3');
+    } else if (bTier === 'S') {
+      bootsGrad.addColorStop(0, '#2f3542');
+      bootsGrad.addColorStop(0.35, '#747d8c');
+      bootsGrad.addColorStop(0.5, '#f1f2f6');
+      bootsGrad.addColorStop(1, '#57606f');
+    } else if (bTier === 'A') {
+      bootsGrad.addColorStop(0, '#2f3640');
+      bootsGrad.addColorStop(0.4, '#718093');
+      bootsGrad.addColorStop(0.6, '#dfe4ea');
+      bootsGrad.addColorStop(1, '#1e272e');
+    } else {
+      bootsGrad.addColorStop(0, '#353b48');
+      bootsGrad.addColorStop(1, '#1e272e');
+    }
+
+    ctx.fillStyle = bootsGrad;
     ctx.beginPath();
-    ctx.arc(this.x - 6.5, this.y - 2, 4.5, 0, Math.PI * 2);
-    ctx.arc(this.x + 6.5, this.y - 2, 4.5, 0, Math.PI * 2);
+    ctx.roundRect(this.x - 11, legY, 7.5, legH, 2.5);
+    ctx.roundRect(this.x + 3.5, legY, 7.5, legH, 2.5);
     ctx.fill();
 
-    // 2. THÂN (ÁO GIÁP)
+    // Mảnh nẹp giáp ống chân kim loại
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fillRect(this.x - 9.5, legY + 2, 2, legH - 4);
+    ctx.fillRect(this.x + 5, legY + 2, 2, legH - 4);
+
+    ctx.fillStyle = bootsGrad;
+    ctx.beginPath();
+    ctx.arc(this.x - 7, this.y - 2, 4.5, 0, Math.PI * 2);
+    ctx.arc(this.x + 7, this.y - 2, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. THÂN - ÁO GIÁP LINEAR GRADIENT KIM LOẠI
     const bodyH = currentH * 0.38;
     const bodyY = legY - bodyH;
-    ctx.fillStyle = this.getChestColor();
+    const chestGrad = ctx.createLinearGradient(this.x - 13, bodyY, this.x + 13, bodyY + bodyH);
+    const cTier = this.chest ? this.chest.tier : 'D';
+    if (cTier === 'SSS') {
+      chestGrad.addColorStop(0, '#b71540');
+      chestGrad.addColorStop(0.2, '#e55039');
+      chestGrad.addColorStop(0.45, '#f6b93b');
+      chestGrad.addColorStop(0.6, '#ffffff'); // Ánh bóng kim loại rực rỡ
+      chestGrad.addColorStop(0.8, '#f39c12');
+      chestGrad.addColorStop(1, '#6c5ce7');
+    } else if (cTier === 'SS') {
+      chestGrad.addColorStop(0, '#0c2461');
+      chestGrad.addColorStop(0.3, '#1e3799');
+      chestGrad.addColorStop(0.5, '#4a69bd');
+      chestGrad.addColorStop(0.65, '#ffffff');
+      chestGrad.addColorStop(1, '#00d2d3');
+    } else if (cTier === 'S') {
+      chestGrad.addColorStop(0, '#2c3e50');
+      chestGrad.addColorStop(0.3, '#576574');
+      chestGrad.addColorStop(0.5, '#dcdde1');
+      chestGrad.addColorStop(0.7, '#8395a7');
+      chestGrad.addColorStop(1, '#222f3e');
+    } else if (cTier === 'A') {
+      chestGrad.addColorStop(0, '#10ac84');
+      chestGrad.addColorStop(0.35, '#1dd1a1');
+      chestGrad.addColorStop(0.55, '#ffffff');
+      chestGrad.addColorStop(0.75, '#10ac84');
+      chestGrad.addColorStop(1, '#01a3a4');
+    } else {
+      chestGrad.addColorStop(0, isP1 ? '#2ed573' : '#ff4757');
+      chestGrad.addColorStop(0.5, isP1 ? '#26de81' : '#ff6b81');
+      chestGrad.addColorStop(1, isP1 ? '#10ac84' : '#ee5253');
+    }
+
+    ctx.fillStyle = chestGrad;
     ctx.beginPath();
-    ctx.roundRect(this.x - 12, bodyY, 24, bodyH, [5, 5, 3, 3]);
+    ctx.roundRect(this.x - 13, bodyY, 26, bodyH, [6, 6, 4, 4]);
     ctx.fill();
-    ctx.strokeStyle = '#2c3e50';
-    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1.4;
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.fillRect(this.x - 9, bodyY + 3, 18, 4);
+    // Khối ốp giáp ngực kim loại phản quang
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+    ctx.fillRect(this.x - 9, bodyY + 3, 18, 3.5);
 
     // 3. ĐẦU VÀ KHUÔN MẶT
     const headRadius = 15;
@@ -1974,19 +2363,62 @@ class Character {
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
+    // Tóc nhân vật
     ctx.fillStyle = isP1 ? '#e67e22' : '#2c3e50';
     ctx.beginPath();
     ctx.arc(this.x, headY - 3, headRadius + 1.5, Math.PI, Math.PI * 2);
     ctx.fill();
 
-    if (this.helmet.tier !== 'D') {
-      ctx.fillStyle = this.getHelmetColor();
+    // MŨ BẢO HỘ KIM LOẠI LINEAR GRADIENT
+    const hTier = this.helmet ? this.helmet.tier : 'D';
+    if (hTier !== 'D') {
+      const helmGrad = ctx.createLinearGradient(this.x - headRadius - 3, headY - 12, this.x + headRadius + 3, headY);
+      if (hTier === 'SSS') {
+        helmGrad.addColorStop(0, '#e67e22');
+        helmGrad.addColorStop(0.25, '#f1c40f');
+        helmGrad.addColorStop(0.5, '#ffffff'); // Ánh vàng rực rỡ vương miện
+        helmGrad.addColorStop(0.75, '#ffd32a');
+        helmGrad.addColorStop(1, '#d35400');
+      } else if (hTier === 'SS') {
+        helmGrad.addColorStop(0, '#006266');
+        helmGrad.addColorStop(0.3, '#00d2d3');
+        helmGrad.addColorStop(0.55, '#ffffff');
+        helmGrad.addColorStop(1, '#54a0ff');
+      } else if (hTier === 'S') {
+        helmGrad.addColorStop(0, '#2f3542');
+        helmGrad.addColorStop(0.35, '#747d8c');
+        helmGrad.addColorStop(0.55, '#f1f2f6');
+        helmGrad.addColorStop(1, '#57606f');
+      } else { // 'A'
+        helmGrad.addColorStop(0, '#10ac84');
+        helmGrad.addColorStop(0.4, '#2ed573');
+        helmGrad.addColorStop(0.6, '#ffffff');
+        helmGrad.addColorStop(1, '#006266');
+      }
+
+      ctx.save();
+      ctx.fillStyle = helmGrad;
       ctx.beginPath();
-      ctx.arc(this.x, headY - 2, headRadius + 2.5, Math.PI * 0.9, Math.PI * 2.1);
+      ctx.arc(this.x, headY - 2, headRadius + 2.5, Math.PI * 0.88, Math.PI * 2.12);
       ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.2;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.lineWidth = 1.3;
       ctx.stroke();
+
+      // Đỉnh vương miện cho cấp SSS
+      if (hTier === 'SSS') {
+        ctx.fillStyle = '#ffd32a';
+        ctx.beginPath();
+        ctx.moveTo(this.x - 7, headY - headRadius - 1);
+        ctx.lineTo(this.x, headY - headRadius - 7);
+        ctx.lineTo(this.x + 7, headY - headRadius - 1);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.x, headY - headRadius - 4, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
     const eyeOffset = this.facingRight ? 3.5 : -3.5;
@@ -2150,106 +2582,313 @@ class Character {
     ctx.translate(pivotX, pivotY);
     ctx.rotate(this.aimAngle);
 
-    const el = this.weapon.element;
+    const el = this.weapon ? this.weapon.element : 'none';
     const pullBack = this.isCharging ? (this.chargePower / 100) * 12 : 0;
+    const now = Date.now();
 
+    // 1. CÁNH CUNG NGUYÊN TỐ (GRADIENT & SHADOWBLUR GLOW)
     if (el === 'wood') {
-      ctx.strokeStyle = '#2ed573';
-      ctx.lineWidth = 3.5;
+      // Hệ Mộc: Cung màu xanh lục chuyển ngọc lục bảo, phát ánh sáng xanh
+      const grad = ctx.createLinearGradient(5, -16, 18, 16);
+      grad.addColorStop(0, '#2ed573');
+      grad.addColorStop(0.35, '#00b894');
+      grad.addColorStop(0.65, '#55efc4');
+      grad.addColorStop(1, '#10ac84');
+
+      ctx.save();
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#2ed573';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.2;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
 
-      ctx.fillStyle = '#26de81';
+      // Búp ngọc lục bảo ở 2 đầu cánh cung
+      ctx.fillStyle = '#55efc4';
       ctx.beginPath();
-      ctx.arc(10 + Math.cos(-1.1) * 15, Math.sin(-1.1) * 15, 3, 0, Math.PI * 2);
-      ctx.arc(10 + Math.cos(1.1) * 15, Math.sin(1.1) * 15, 3, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(-Math.PI / 2.2) * 16, Math.sin(-Math.PI / 2.2) * 16, 3.5, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(Math.PI / 2.2) * 16, Math.sin(Math.PI / 2.2) * 16, 3.5, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+
+      // Hạt lá mộc rụng nhẹ ngẫu nhiên
+      if (Math.random() < 0.08 && typeof game !== 'undefined' && game.particles) {
+        const rad = Math.random() < 0.5 ? -Math.PI / 2.2 : Math.PI / 2.2;
+        const lx = pivotX + Math.cos(this.aimAngle) * 10 + Math.cos(this.aimAngle + rad) * 16;
+        const ly = pivotY + Math.sin(this.aimAngle) * 10 + Math.sin(this.aimAngle + rad) * 16;
+        game.particles.push(new Particle(lx, ly, (Math.random() - 0.5) * 20, 20 + Math.random() * 20, '#2ed573', 3, 0.4, 'leaf'));
+      }
     } else if (el === 'lightning') {
-      ctx.strokeStyle = '#ffd32a';
-      ctx.lineWidth = 3.2;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#fff';
+      // Hệ Điện: Vàng chanh chớp nháy (alpha thay đổi liên tục), hạt tia lửa
+      const electricAlpha = 0.55 + 0.45 * Math.sin(now / 35);
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, '#fff200');
+      grad.addColorStop(0.5, '#ffd32a');
+      grad.addColorStop(1, '#f1c40f');
+
+      ctx.save();
+      ctx.globalAlpha = electricAlpha;
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = '#fff200';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3.6;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(10 + Math.cos(-Math.PI / 2.3) * 15, Math.sin(-Math.PI / 2.3) * 15);
-      ctx.lineTo(18, -6);
-      ctx.lineTo(14, 0);
-      ctx.lineTo(18, 6);
-      ctx.lineTo(10 + Math.cos(Math.PI / 2.3) * 15, Math.sin(Math.PI / 2.3) * 15);
+      // Thân cung zích zắc kiểu tia sét
+      ctx.moveTo(10 + Math.cos(-Math.PI / 2.2) * 16, Math.sin(-Math.PI / 2.2) * 16);
+      ctx.lineTo(17, -8);
+      ctx.lineTo(13, 0);
+      ctx.lineTo(17, 8);
+      ctx.lineTo(10 + Math.cos(Math.PI / 2.2) * 16, Math.sin(Math.PI / 2.2) * 16);
       ctx.stroke();
-    } else if (el === 'fire') {
-      ctx.strokeStyle = '#ff4757';
-      ctx.lineWidth = 3.8;
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = '#ff6b81';
+
+      // Nút năng lượng điện chớp lóa
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(13, 0, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (el === 'explosion') {
+      // Hệ Nổ: Cung mang sắc cam đỏ rực
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, '#ff3838');
+      grad.addColorStop(0.35, '#ff793f');
+      grad.addColorStop(0.7, '#e17055');
+      grad.addColorStop(1, '#c0392b');
+
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = '#ff4757';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.4;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
+
+      // Nòng pháo kim loại chịu nhiệt ở thân cung
+      ctx.fillStyle = '#2f3542';
+      ctx.fillRect(12, -4, 5, 8);
+      ctx.strokeStyle = '#ff9f43';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(12, -4, 5, 8);
+      ctx.restore();
     } else if (el === 'ice') {
-      ctx.strokeStyle = '#70a1ff';
-      ctx.lineWidth = 3.5;
-      ctx.shadowBlur = 6;
-      ctx.shadowColor = '#dff9fb';
+      // Hệ Băng: Xanh lam nhạt, sắc cạnh, tỏa sương lạnh ở góc cung
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, '#dff9fb');
+      grad.addColorStop(0.4, '#70a1ff');
+      grad.addColorStop(0.7, '#ffffff');
+      grad.addColorStop(1, '#00d2d3');
+
+      ctx.save();
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#70a1ff';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.0;
+      ctx.lineCap = 'square';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      // Cánh cung tinh thể sắc cạnh
+      ctx.moveTo(10 + Math.cos(-Math.PI / 2.2) * 16, Math.sin(-Math.PI / 2.2) * 16);
+      ctx.lineTo(15, -7);
+      ctx.lineTo(16, 0);
+      ctx.lineTo(15, 7);
+      ctx.lineTo(10 + Math.cos(Math.PI / 2.2) * 16, Math.sin(Math.PI / 2.2) * 16);
       ctx.stroke();
+
+      // Luồng khói sương mờ tỏa ra từ 2 góc cánh cung
+      const mistT = now / 400;
+      const mistGrad1 = ctx.createRadialGradient(8, -15, 1, 8, -15, 10);
+      mistGrad1.addColorStop(0, 'rgba(223, 249, 251, 0.65)');
+      mistGrad1.addColorStop(1, 'rgba(112, 161, 255, 0)');
+      ctx.fillStyle = mistGrad1;
+      ctx.beginPath();
+      ctx.arc(8 + Math.sin(mistT) * 2, -15, 8, 0, Math.PI * 2);
+      ctx.fill();
+
+      const mistGrad2 = ctx.createRadialGradient(8, 15, 1, 8, 15, 10);
+      mistGrad2.addColorStop(0, 'rgba(223, 249, 251, 0.65)');
+      mistGrad2.addColorStop(1, 'rgba(112, 161, 255, 0)');
+      ctx.fillStyle = mistGrad2;
+      ctx.beginPath();
+      ctx.arc(8 + Math.cos(mistT) * 2, 15, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (el === 'fire') {
+      // Hệ Lửa: Rực màu đỏ cam, có hạt lửa liên tục bốc lên từ thân cung
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, '#eb4d4b');
+      grad.addColorStop(0.3, '#ff793f');
+      grad.addColorStop(0.65, '#f0932b');
+      grad.addColorStop(1, '#ffbe76');
+
+      ctx.save();
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#eb4d4b';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.2;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
+      ctx.stroke();
+
+      // Vẽ lưỡi lửa bốc lên trên thân cung
+      const flameShift = Math.sin(now / 80) * 3;
+      ctx.fillStyle = '#ffd32a';
+      ctx.beginPath();
+      ctx.moveTo(14, -3);
+      ctx.lineTo(20 + flameShift, 0);
+      ctx.lineTo(14, 3);
+      ctx.fill();
+      ctx.restore();
+
+      // Hạt lửa bốc lên từ thân cung
+      if (Math.random() < 0.12 && typeof game !== 'undefined' && game.particles) {
+        const fx = pivotX + Math.cos(this.aimAngle) * 14 + (Math.random() - 0.5) * 8;
+        const fy = pivotY + Math.sin(this.aimAngle) * 14 + (Math.random() - 0.5) * 8;
+        game.particles.push(new Particle(fx, fy, (Math.random() - 0.5) * 25, -25 - Math.random() * 25, '#ff6b81', 3, 0.35, 'cinder'));
+      }
     } else if (el === 'poison') {
-      ctx.strokeStyle = '#f1f2f6';
-      ctx.lineWidth = 3.2;
+      // Hệ Độc: Màu tím than pha xanh sẫm, liên tục nhỏ giọt
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, '#2c2c54');
+      grad.addColorStop(0.4, '#8854d0');
+      grad.addColorStop(0.7, '#38ada9');
+      grad.addColorStop(1, '#00d2d3');
+
+      ctx.save();
+      ctx.shadowBlur = 16;
+      ctx.shadowColor = '#a55eea';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.0;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
+
+      // Mũi gai độc màu tím ngọc
       ctx.fillStyle = '#a55eea';
       ctx.beginPath();
-      ctx.arc(10 + Math.cos(-0.8) * 15, Math.sin(-0.8) * 15, 2.5, 0, Math.PI * 2);
-      ctx.arc(10 + Math.cos(0.8) * 15, Math.sin(0.8) * 15, 2.5, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(-Math.PI / 2.2) * 16, Math.sin(-Math.PI / 2.2) * 16, 3.2, 0, Math.PI * 2);
+      ctx.arc(10 + Math.cos(Math.PI / 2.2) * 16, Math.sin(Math.PI / 2.2) * 16, 3.2, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
+
+      // Giọt độc nhỏ xuống đất
+      if (Math.random() < 0.1 && typeof game !== 'undefined' && game.particles) {
+        const px = pivotX + Math.cos(this.aimAngle) * 12 + (Math.random() - 0.5) * 6;
+        const py = pivotY + Math.sin(this.aimAngle) * 12 + (Math.random() - 0.5) * 6;
+        game.particles.push(new Particle(px, py, (Math.random() - 0.5) * 15, 30 + Math.random() * 25, '#a55eea', 2.8, 0.4, 'poison_drip'));
+      }
     } else if (el === 'water') {
-      ctx.strokeStyle = 'rgba(72, 219, 251, 0.85)';
-      ctx.lineWidth = 3.5;
+      // Hệ Nước: Xanh dương trong vắt, đổ bóng bóng bẩy
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, 'rgba(116, 185, 255, 0.9)');
+      grad.addColorStop(0.5, 'rgba(9, 132, 227, 0.95)');
+      grad.addColorStop(1, 'rgba(0, 206, 201, 0.9)');
+
+      ctx.save();
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = '#0984e3';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 4.2;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
+
+      // Vệt sáng bóng bẩy phản chiếu mặt nước
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(8, 0, 14, -Math.PI / 3, Math.PI / 3);
+      ctx.stroke();
+      ctx.restore();
+
+      // Bong bóng nhỏ bay lên từ cánh cung
+      if (Math.random() < 0.1 && typeof game !== 'undefined' && game.particles) {
+        const bx = pivotX + Math.cos(this.aimAngle) * 12;
+        const by = pivotY + Math.sin(this.aimAngle) * 12;
+        game.particles.push(new Particle(bx, by, (Math.random() - 0.5) * 20, -25 - Math.random() * 20, 'rgba(116, 185, 255, 0.8)', 3, 0.45, 'bubble'));
+      }
     } else if (el === 'wind') {
-      ctx.strokeStyle = '#00d2d3';
-      ctx.lineWidth = 3.2;
+      // Hệ Gió: Mờ ảo (alpha thấp), tỏa hào quang trắng lướt qua nhanh
+      const grad = ctx.createLinearGradient(6, -16, 18, 16);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      grad.addColorStop(0.5, 'rgba(0, 210, 211, 0.85)');
+      grad.addColorStop(1, 'rgba(223, 249, 251, 0.75)');
+
+      ctx.save();
+      ctx.globalAlpha = 0.65;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = '#ffffff';
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3.6;
+      ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
-    } else if (el === 'explosion') {
-      ctx.strokeStyle = '#e67e22';
-      ctx.lineWidth = 3.8;
+
+      // Đường cắt gió khí động học
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(13, 0, 12, -Math.PI / 3, Math.PI / 3);
       ctx.stroke();
-      ctx.fillStyle = '#2f3542';
-      ctx.fillRect(13, -3, 5, 6);
+      ctx.restore();
     } else {
+      // Mặc định
       ctx.strokeStyle = '#8d6e63';
-      ctx.lineWidth = 3.2;
+      ctx.lineWidth = 3.6;
       ctx.beginPath();
-      ctx.arc(10, 0, 15, -Math.PI / 2.3, Math.PI / 2.3);
+      ctx.arc(10, 0, 16, -Math.PI / 2.2, Math.PI / 2.2);
       ctx.stroke();
     }
 
+    // 2. DÂY CUNG NĂNG LƯỢNG KÉO CĂNG
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.3;
     ctx.beginPath();
-    ctx.moveTo(10 + Math.cos(-Math.PI / 2.3) * 15, Math.sin(-Math.PI / 2.3) * 15);
+    ctx.moveTo(10 + Math.cos(-Math.PI / 2.2) * 16, Math.sin(-Math.PI / 2.2) * 16);
     ctx.lineTo(10 - pullBack, 0);
-    ctx.lineTo(10 + Math.cos(Math.PI / 2.3) * 15, Math.sin(Math.PI / 2.3) * 15);
+    ctx.lineTo(10 + Math.cos(Math.PI / 2.2) * 16, Math.sin(Math.PI / 2.2) * 16);
     ctx.stroke();
 
+    // 3. MŨI TÊN ĐANG ĐẶT TRÊN DÂY KHI TỤ LỰC
     if (this.isCharging || this.chargePower > 0) {
-      ctx.strokeStyle = '#c8d6e5';
-      ctx.lineWidth = 2.0;
+      ctx.save();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.moveTo(10 - pullBack, 0);
-      ctx.lineTo(26 - pullBack, 0);
+      ctx.lineTo(28 - pullBack, 0);
       ctx.stroke();
+
+      // Đầu mũi tên phát sáng khi tụ lực
+      ctx.fillStyle = '#ffd32a';
+      ctx.shadowBlur = 10;
+      ctx.shadowColor = '#fff';
+      ctx.beginPath();
+      ctx.moveTo(28 - pullBack, 0);
+      ctx.lineTo(23 - pullBack, -3.5);
+      ctx.lineTo(23 - pullBack, 3.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     }
 
     ctx.restore();
+  }
+
+  getArmorTierRank() {
+    const t = [this.helmet ? this.helmet.tier : 'D', this.chest ? this.chest.tier : 'D', this.boots ? this.boots.tier : 'D'];
+    if (t.includes('SSS')) return 'SSS';
+    if (t.includes('SS')) return 'SS';
+    if (t.includes('S')) return 'S';
+    if (t.includes('A')) return 'A';
+    return 'D';
   }
 
   getHelmetColor() {
@@ -3474,6 +4113,11 @@ class GameManager {
     this.blindBagSpawnTimer = 0;
     this.pendingHitEvents = [];
 
+    // Hiệu ứng rung giật màn hình (Screen Shake)
+    this.screenShakeTime = 0;
+    this.screenShakeDuration = 0;
+    this.screenShakeIntensity = 0;
+
     this.network = new NetworkManager(this);
     this.input = new InputHandler(this);
 
@@ -3512,6 +4156,306 @@ class GameManager {
 
   recordHitEvent(evt) {
     this.pendingHitEvents.push(evt);
+  }
+
+  // KÍCH HOẠT HIỆU ỨNG RUNG MÀN HÌNH (SCREEN SHAKE)
+  triggerScreenShake(duration = 0.25, intensity = 6) {
+    this.screenShakeDuration = duration;
+    this.screenShakeTime = duration;
+    this.screenShakeIntensity = intensity;
+  }
+
+  // BÙNG NỔ HẠT VA CHẠM VÀ AOE THEO NGUYÊN TỐ (IMPACT & AOE PARTICLE SYSTEM)
+  spawnElementalImpact(x, y, element, scale = 1) {
+    const countMult = scale || 1;
+    switch (element) {
+      case 'ice': {
+        this.triggerScreenShake(0.2, 4 * scale);
+        // Bùng nổ hàng trăm tinh thể tuyết và mảnh băng sắc lạnh
+        const total = Math.round(90 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 60 + Math.random() * 280;
+          const colors = ['#ffffff', '#dff9fb', '#70a1ff', '#c7ecee'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 30,
+            col,
+            2.5 + Math.random() * 3.5,
+            0.4 + Math.random() * 0.45,
+            'ice'
+          ));
+        }
+        // Vệt sương lạnh bốc mờ
+        for (let i = 0; i < 20; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 120,
+            -Math.random() * 80 - 20,
+            'rgba(223, 249, 251, 0.6)',
+            6 + Math.random() * 8,
+            0.5 + Math.random() * 0.3,
+            'smoke'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#70a1ff', 1, 0.45, 'shockwave'));
+        break;
+      }
+
+      case 'lightning': {
+        this.triggerScreenShake(0.25, 6 * scale);
+        // Hàng chục tia sét lan truyền trên mặt đất & hạt tia lửa văng ra
+        const total = Math.round(55 * countMult);
+        for (let i = 0; i < total; i++) {
+          const spd = 120 + Math.random() * 350;
+          const angle = Math.random() * Math.PI * 2;
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 40,
+            Math.random() < 0.5 ? '#fff200' : '#ffd32a',
+            2.5 + Math.random() * 3.5,
+            0.35 + Math.random() * 0.35,
+            'spark'
+          ));
+        }
+        // Các nhánh điện giật bò ngang trên mặt đất
+        for (let i = 0; i < 14; i++) {
+          const side = Math.random() < 0.5 ? -1 : 1;
+          this.particles.push(new Particle(
+            x, y - 4,
+            side * (180 + Math.random() * 220),
+            (Math.random() - 0.5) * 40,
+            '#ffffff',
+            3,
+            0.3 + Math.random() * 0.25,
+            'spark'
+          ));
+        }
+        // Mini tia chớp đánh giật
+        this.lightnings.push(new LightningBolt(x, y - 140, x, y, '#ffd32a', 6));
+        this.lightnings.push(new LightningBolt(x - 30, y - 60, x + 35, y, '#ffffff', 4));
+        this.particles.push(new Particle(x, y, 0, 0, '#ffd32a', 1, 0.4, 'shockwave'));
+        break;
+      }
+
+      case 'fire': {
+        this.triggerScreenShake(0.25, 6 * scale);
+        const total = Math.round(75 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 70 + Math.random() * 240;
+          const colors = ['#ff4757', '#ffa502', '#ff6b81', '#ff793f'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 60,
+            col,
+            3.5 + Math.random() * 3.5,
+            0.4 + Math.random() * 0.4,
+            'cinder'
+          ));
+        }
+        for (let i = 0; i < 22; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 110,
+            -Math.random() * 90 - 30,
+            '#2f3542',
+            6 + Math.random() * 6,
+            0.55 + Math.random() * 0.35,
+            'smoke'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#ff4757', 1, 0.45, 'shockwave'));
+        break;
+      }
+
+      case 'explosion': {
+        sounds.playExplosion();
+        this.triggerScreenShake(0.38, 9 * scale);
+        const total = Math.round(110 * countMult);
+        // Vụ nổ hạt bung tỏa cực mạnh, tàn tro khói bụi bay mù mịt
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 120 + Math.random() * 380;
+          const colors = ['#ff3838', '#ff9f43', '#ffffff', '#ff5252', '#f39c12'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 50,
+            col,
+            3.5 + Math.random() * 4.5,
+            0.4 + Math.random() * 0.5,
+            'spark'
+          ));
+        }
+        // Khói đen dày đặc
+        for (let i = 0; i < 35; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 180,
+            -Math.random() * 120 - 40,
+            '#2d3436',
+            8 + Math.random() * 10,
+            0.6 + Math.random() * 0.4,
+            'smoke'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#ff3838', 1, 0.55, 'shockwave'));
+        this.particles.push(new Particle(x, y, 0, 0, '#f39c12', 0.8, 0.4, 'shockwave'));
+        break;
+      }
+
+      case 'poison': {
+        this.triggerScreenShake(0.18, 4 * scale);
+        const total = Math.round(65 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 50 + Math.random() * 180;
+          const colors = ['#a55eea', '#8e44ad', '#2ed573', '#6c5ce7'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 30,
+            col,
+            3.0 + Math.random() * 3.5,
+            0.45 + Math.random() * 0.4,
+            'poison_drip'
+          ));
+        }
+        for (let i = 0; i < 20; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 90,
+            -Math.random() * 60 - 20,
+            '#a55eea',
+            6 + Math.random() * 6,
+            0.55 + Math.random() * 0.35,
+            'smoke'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#a55eea', 1, 0.4, 'shockwave'));
+        break;
+      }
+
+      case 'water': {
+        this.triggerScreenShake(0.16, 3.5 * scale);
+        const total = Math.round(70 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 60 + Math.random() * 220;
+          const colors = ['#0984e3', '#74b9ff', '#00cec9', '#ffffff'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 40,
+            col,
+            3.0 + Math.random() * 3.5,
+            0.4 + Math.random() * 0.4,
+            'circle'
+          ));
+        }
+        for (let i = 0; i < 25; i++) {
+          this.particles.push(new Particle(
+            x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 20,
+            (Math.random() - 0.5) * 50,
+            -40 - Math.random() * 50,
+            'rgba(116, 185, 255, 0.85)',
+            3.5 + Math.random() * 3,
+            0.5 + Math.random() * 0.4,
+            'bubble'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#0984e3', 1, 0.45, 'shockwave'));
+        break;
+      }
+
+      case 'wind': {
+        this.triggerScreenShake(0.2, 5 * scale);
+        const total = Math.round(55 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 100 + Math.random() * 300;
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 30,
+            Math.random() < 0.6 ? '#ffffff' : '#00d2d3',
+            3.5 + Math.random() * 3.5,
+            0.35 + Math.random() * 0.35,
+            'wind_slash'
+          ));
+        }
+        for (let i = 0; i < 20; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 120,
+            -Math.random() * 70 - 20,
+            '#c7ecee',
+            5 + Math.random() * 5,
+            0.4 + Math.random() * 0.3,
+            'smoke'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#ffffff', 1, 0.35, 'shockwave'));
+        break;
+      }
+
+      case 'wood': {
+        this.triggerScreenShake(0.18, 4 * scale);
+        const total = Math.round(65 * countMult);
+        for (let i = 0; i < total; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 50 + Math.random() * 200;
+          const colors = ['#2ed573', '#10ac84', '#26de81', '#00b894'];
+          const col = colors[Math.floor(Math.random() * colors.length)];
+          this.particles.push(new Particle(
+            x, y,
+            Math.cos(angle) * spd,
+            Math.sin(angle) * spd - 35,
+            col,
+            3.5 + Math.random() * 3.5,
+            0.5 + Math.random() * 0.45,
+            'leaf'
+          ));
+        }
+        for (let i = 0; i < 20; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 90,
+            (Math.random() - 0.5) * 90 - 20,
+            '#7bed9f',
+            3,
+            0.4 + Math.random() * 0.3,
+            'spark'
+          ));
+        }
+        this.particles.push(new Particle(x, y, 0, 0, '#2ed573', 1, 0.4, 'shockwave'));
+        break;
+      }
+
+      default: {
+        this.triggerScreenShake(0.15, 3 * scale);
+        for (let i = 0; i < 25; i++) {
+          this.particles.push(new Particle(
+            x, y,
+            (Math.random() - 0.5) * 120,
+            (Math.random() - 0.5) * 120 - 20,
+            '#bdc581',
+            3.5,
+            0.35
+          ));
+        }
+        break;
+      }
+    }
   }
 
   changeWind() {
@@ -3673,6 +4617,10 @@ class GameManager {
   }
 
   update(dt) {
+    if (this.screenShakeTime > 0) {
+      this.screenShakeTime = Math.max(0, this.screenShakeTime - dt);
+    }
+
     if (this.state !== 'PLAYING') return;
 
     if (this.network.isClient) {
@@ -3976,11 +4924,9 @@ class GameManager {
       if (this.arrowIntersectsBox(arrow, plat)) {
         arrow.active = false;
         sounds.playObstacleHit();
-        this.aoeZones.push(new AoEZone(arrow.x, arrow.y, arrow.weapon ? arrow.weapon.element : 'none', arrow.owner));
-
-        for (let i = 0; i < 8; i++) {
-          this.particles.push(new Particle(arrow.x, arrow.y, (Math.random()-0.5)*90, (Math.random()-0.5)*90, '#bdc581', 3, 0.3));
-        }
+        const elem = arrow.weapon ? arrow.weapon.element : 'none';
+        this.aoeZones.push(new AoEZone(arrow.x, arrow.y, elem, arrow.owner));
+        this.spawnElementalImpact(arrow.x, arrow.y, elem, 0.9);
         return;
       }
     }
@@ -4010,10 +4956,9 @@ class GameManager {
     // Chạm sàn đất vững chắc: Không có hố, đạn luôn kích hoạt hiệu ứng chạm sàn
     if (arrow.y >= this.groundY) {
       arrow.active = false;
-      this.aoeZones.push(new AoEZone(arrow.x, this.groundY, arrow.weapon ? arrow.weapon.element : 'none', arrow.owner));
-      for (let i = 0; i < 6; i++) {
-        this.particles.push(new Particle(arrow.x, this.groundY, (Math.random()-0.5)*80, -Math.random()*60, '#78e08f', 3, 0.3));
-      }
+      const elem = arrow.weapon ? arrow.weapon.element : 'none';
+      this.aoeZones.push(new AoEZone(arrow.x, this.groundY, elem, arrow.owner));
+      this.spawnElementalImpact(arrow.x, this.groundY, elem, 1.0);
     }
   }
 
@@ -4230,14 +5175,7 @@ class GameManager {
         const textPrefix = evt.isCrit ? '💥 CRIT! -' : '-';
         const textColor = evt.isCrit ? '#ff4757' : (evt.hitbox === 'body' ? '#ffa502' : '#f1f2f6');
         this.floatingTexts.push(new FloatingText(evt.x, evt.y - 15, `${textPrefix}${evt.damage}`, textColor, evt.isCrit ? 24 : 18, evt.isCrit));
-        for (let i = 0; i < 15; i++) {
-          this.particles.push(new Particle(
-            evt.x, evt.y,
-            (Math.random() - 0.5) * 120,
-            (Math.random() - 0.5) * 120 - 40,
-            evt.isCrit ? '#ff3838' : '#e74c3c', 3.5, 0.4
-          ));
-        }
+        this.spawnElementalImpact(evt.x, evt.y, evt.element || 'none', evt.isCrit ? 1.4 : 1.05);
       });
     }
 
@@ -4427,6 +5365,15 @@ class GameManager {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    ctx.save();
+    if (this.screenShakeTime > 0 && this.screenShakeDuration > 0) {
+      const shakeFactor = this.screenShakeTime / this.screenShakeDuration;
+      const mag = this.screenShakeIntensity * shakeFactor;
+      const ox = (Math.random() - 0.5) * 2 * mag;
+      const oy = (Math.random() - 0.5) * 2 * mag;
+      ctx.translate(ox, oy);
+    }
+
     const cfg = MAP_CONFIGS[this.currentMapId] || MAP_CONFIGS.jungle;
     this.drawSkyAndEnvironment(ctx, cfg);
     this.platforms.forEach(plat => this.drawPlatform(ctx, plat));
@@ -4450,6 +5397,8 @@ class GameManager {
         if (!p.isDead) this.drawAimGuide(ctx, p);
       });
     }
+
+    ctx.restore();
   }
 
   drawAimGuide(ctx, char) {
