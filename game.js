@@ -1253,8 +1253,8 @@ class Character {
     this.facingRight = facingRight;
     this.color = color;
 
-    this.maxHp = 100;
-    this.hp = 100;
+    this.maxHp = 1000;
+    this.hp = 1000;
     this.isDead = false;
 
     // HỆ THỐNG NĂNG LƯỢNG (ENERGY SYSTEM)
@@ -3541,8 +3541,8 @@ class GameManager {
       if (box.active) {
         for (let p of this.players) {
           if (!p.isDead && p.defeatState === 'ALIVE' && this.checkCollisionBox(p, box)) {
-            p.heal(25);
-            this.floatingTexts.push(new FloatingText(p.x, p.y - 60, '+25 HP (Cứu Thương)', '#2ed573', 22));
+            p.heal(250);
+            this.floatingTexts.push(new FloatingText(p.x, p.y - 60, '+250 HP (Cứu Thương)', '#2ed573', 22));
             box.active = false;
             break;
           }
@@ -4007,7 +4007,7 @@ class GameManager {
         p.vx = sp.vx;
         p.vy = sp.vy;
         p.hp = sp.hp;
-        p.maxHp = sp.maxHp || 100;
+        p.maxHp = sp.maxHp || 1000;
         p.energy = sp.energy !== undefined ? sp.energy : p.energy;
         p.maxEnergy = sp.maxEnergy || 100;
         p.facingRight = sp.facing;
