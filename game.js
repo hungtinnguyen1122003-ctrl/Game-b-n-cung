@@ -2225,6 +2225,39 @@ class NetworkManager {
       });
     }
 
+    const btnCopyLink = document.getElementById('btn-copy-room-link');
+    if (btnCopyLink) {
+      btnCopyLink.addEventListener('click', () => {
+        if (!this.roomCode) return;
+        const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${this.roomCode}`;
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+          btnCopyLink.innerText = '✅ Đã Copy Link!';
+          setTimeout(() => { btnCopyLink.innerText = '🔗 Copy Link Mời'; }, 2500);
+        }).catch(() => {
+          // Fallback nếu clipboard API bị chặn
+          prompt('Copy link mời bên dưới gửi cho bạn bè:', inviteUrl);
+          btnCopyLink.innerText = '🔗 Copy Link Mời';
+        });
+      });
+    }
+
+    // Tự động kiểm tra param ?room= trên URL để điền và tự động vào phòng
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryRoom = urlParams.get('room');
+      if (queryRoom) {
+        const cleanQueryRoom = queryRoom.trim().toUpperCase();
+        if (joinInput) joinInput.value = cleanQueryRoom;
+        // Chờ 500ms sau khi trang load xong thì tự động join phòng
+        setTimeout(() => {
+          console.log('Tự động tham gia phòng từ URL:', cleanQueryRoom);
+          this.joinRoom(cleanQueryRoom);
+        }, 600);
+      }
+    } catch (e) {
+      console.warn('Lỗi đọc URL param room:', e);
+    }
+
     if (btnLeave) {
       btnLeave.addEventListener('click', () => this.leaveRoom());
     }
@@ -2253,6 +2286,23 @@ class NetworkManager {
     return 'AGY-' + Math.floor(1000 + Math.random() * 9000);
   }
 
+  getPeerConfig() {
+    return {
+      debug: 1,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:stun3.l.google.com:19302' },
+          { urls: 'stun:stun4.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ],
+        sdpSemantics: 'unified-plan'
+      }
+    };
+  }
+
   createRoom() {
     this.cleanup();
     const code = this.generateRoomCode();
@@ -2263,6 +2313,13 @@ class NetworkManager {
     this.myPlayerId = 'p1';
     this.isReady = true;
 
+    // Cập nhật URL trình duyệt để phản ánh mã phòng
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', code);
+      window.history.replaceState({}, '', url.toString());
+    }
+
     this.setupBroadcastChannel(code);
 
     const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2270,7 +2327,11 @@ class NetworkManager {
 
     if (typeof Peer !== 'undefined') {
       try {
-        this.peer = new Peer(peerId, { debug: 1 });
+        this.peer = new Peer(peerId, this.getPeerConfig());
+
+        this.peer.on('open', (id) => {
+          console.log('PeerJS Host sẵn sàng với ID:', id);
+        });
 
         this.peer.on('connection', (conn) => {
           if (this.clients.size >= 4) {
@@ -2304,6 +2365,13 @@ class NetworkManager {
     this.inRoom = true;
     this.isReady = false;
 
+    // Cập nhật URL trình duyệt
+    if (window.history && window.history.replaceState) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('room', code);
+      window.history.replaceState({}, '', url.toString());
+    }
+
     this.setupBroadcastChannel(code);
 
     const cleanCode = code.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -2311,29 +2379,36 @@ class NetworkManager {
 
     if (typeof Peer !== 'undefined') {
       try {
-        this.peer = new Peer({ debug: 1 });
+        this.peer = new Peer(this.getPeerConfig());
 
         this.peer.on('open', () => {
-          const conn = this.peer.connect(hostPeerId, { reliable: true });
+          const conn = this.peer.connect(hostPeerId, {
+            reliable: true
+          });
           this.setupClientConnection(conn);
         });
 
         this.peer.on('error', (err) => {
           console.warn('PeerJS Client Error:', err);
-          alert('Không thể kết nối tới phòng ' + code + '. Hãy kiểm tra lại mã phòng!');
+          if (err.type === 'peer-unavailable') {
+            alert('Không tìm thấy phòng ' + code + '! Hãy chắc chắn rằng Chủ phòng (Host) đang mở game.');
+          }
         });
       } catch (e) {
         console.warn('PeerJS Client init failed:', e);
       }
     }
 
+    // Gửi join qua BroadcastChannel phòng trường hợp cùng trình duyệt / khác tab
     setTimeout(() => {
-      this.sendToHost({
-        type: 'CLIENT_JOIN_REQUEST',
-        nickname: this.myNickname,
-        equip: this.getMyEquip()
-      });
-    }, 450);
+      if (this.bc) {
+        this.bc.postMessage({
+          type: 'CLIENT_JOIN_REQUEST',
+          nickname: this.myNickname,
+          equip: this.getMyEquip()
+        });
+      }
+    }, 300);
 
     this.showInRoomUI();
     this.updateLobbyRoomUI();
@@ -2378,11 +2453,22 @@ class NetworkManager {
     this.hostConn = conn;
 
     conn.on('open', () => {
-      this.sendToHost({
-        type: 'CLIENT_JOIN_REQUEST',
-        nickname: this.myNickname,
-        equip: this.getMyEquip()
-      });
+      console.log('Đã kết nối WebRTC tới Host!');
+      // Gửi request tham gia ngay khi kết nối mở
+      const sendJoin = () => {
+        if (this.hostConn && this.hostConn.open && (!this.myPlayerId || this.myPlayerId === 'p1')) {
+          this.sendToHost({
+            type: 'CLIENT_JOIN_REQUEST',
+            nickname: this.myNickname,
+            equip: this.getMyEquip()
+          });
+        }
+      };
+
+      sendJoin();
+      // Retry sau 600ms và 1200ms nếu chưa nhận được HOST_WELCOME
+      setTimeout(sendJoin, 600);
+      setTimeout(sendJoin, 1200);
     });
 
     conn.on('data', (data) => {
