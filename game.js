@@ -102,7 +102,7 @@ const WEAPONS = [
     baseDamage: 280,
     speedMultiplier: 1.85,
     special: 'wind_pierce',
-    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng đối thủ bị thổi bay lên & treo trên không 0.5s; Bắn trúng địa hình tạo vùng gió giữ chân đối thủ 0.5s (vẫn xoay & bắn bình thường). Sát thương: 280 HP.'
+    desc: 'Cấp SS - Cung Vũ Dực: Bắn trúng đối thủ bị thổi bay lên & treo trên không 1.0s; Bắn trúng địa hình tạo vùng lốc hất tung & khóa di chuyển 1.0s (vẫn xoay & bắn bình thường). Sát thương: 280 HP.'
   },
 
   // Cấp SSS - Vũ khí thần thoại kèm kỹ năng đặc biệt
@@ -542,7 +542,7 @@ class AoEZone {
       }
     }
 
-    // Nếu là vùng gió Cung Vũ Dực khi trúng địa hình: Kẻ địch trong vùng hiệu ứng bị giữ chân 0.5s, không thể di chuyển, nhưng vẫn quay trái phải và bắn bình thường
+    // Nếu là vùng gió Cung Vũ Dực khi trúng địa hình: Vẫn hất tung đối thủ lên nhưng địch không thể di chuyển (khóa di chuyển trong 1s, vẫn xoay trái phải và bắn bình thường)
     if (this.element === 'wind') {
       const victims = (game.players || []).filter(p => p && p.id !== this.owner && !p.isDead && p.defeatState === 'ALIVE');
 
@@ -551,15 +551,19 @@ class AoEZone {
         const distY = Math.abs(v.y - this.y);
         // Đang ở trong vùng gió địa hình
         if (distX <= this.radius + 12 && distY <= 45) {
-          v.statusEffects.root = 0.5; // Không được di chuyển trong 0.5s
+          v.statusEffects.root = Math.max(v.statusEffects.root, 1.0); // Khóa di chuyển trong 1s
           v.vx = 0; // Khóa chuyển động ngang tức thì
 
-          if (!v.windRootCooldown || v.windRootCooldown <= 0) {
-            v.windRootCooldown = 0.55;
-            game.floatingTexts.push(new FloatingText(v.x, v.y - 48, '🌪️ BỊ GIỮ CHÂN (0.5s)', '#00d2d3', 17, true));
-            game.particles.push(new Particle(v.x, v.y, 0, 0, '#00d2d3', 1, 0.4, 'shockwave'));
-            for (let i = 0; i < 8; i++) {
-              game.particles.push(new Particle(v.x, v.y, (Math.random()-0.5)*50, -25 - Math.random()*25, '#ffffff', 3, 0.35, 'circle'));
+          if (!v.windBounceCooldown || v.windBounceCooldown <= 0) {
+            v.windBounceCooldown = 0.8;
+            v.vy = v.jumpForce; // Hất tung đối thủ lên không trung
+            v.isGrounded = false;
+            sounds.playJump(false);
+
+            game.floatingTexts.push(new FloatingText(v.x, v.y - 48, '🌪️ HẤT TUNG & KHÓA CHÂN (1.0s)', '#00d2d3', 17, true));
+            game.particles.push(new Particle(v.x, v.y, 0, 0, '#00d2d3', 1, 0.45, 'shockwave'));
+            for (let i = 0; i < 10; i++) {
+              game.particles.push(new Particle(v.x, v.y, (Math.random()-0.5)*60, -35 - Math.random()*35, '#ffffff', 3.5, 0.4, 'circle'));
             }
           }
         }
@@ -587,7 +591,7 @@ class AoEZone {
         if (this.element === 'ice') v.statusEffects.freeze = 1.0;
         if (this.element === 'lightning') v.statusEffects.stun = 0.6;
         if (this.element === 'wind') {
-          v.statusEffects.root = 0.5; // Giữ chân 0.5s
+          v.statusEffects.root = Math.max(v.statusEffects.root, 1.0); // Khóa di chuyển 1s
           v.vx = 0;
         }
 
@@ -2158,13 +2162,13 @@ class Character {
         this.vy = 0; // Triệt tiêu trọng lực rơi tức thì, giữ nguyên độ cao
         this.vx = 0; // Triệt tiêu quán tính di chuyển ngang
         this.isGrounded = false;
-        this.statusEffects.levitate = 0.5; // Treo lơ lửng trên không trong 0.5s
+        this.statusEffects.levitate = 1.0; // Treo lơ lửng trên không trong 1s (1.0s)
         sounds.playJump(false);
         for (let i = 0; i < 20; i++) {
           game.particles.push(new Particle(this.x, this.y - 10, (Math.random()-0.5)*70, -35 - Math.random()*35, '#00d2d3', 3.5, 0.45, 'circle'));
         }
         game.particles.push(new Particle(this.x, this.y, 0, 0, '#00d2d3', 1, 0.4, 'shockwave'));
-        game.floatingTexts.push(new FloatingText(this.x, this.y - 50, '🌪️ THỔI BAY LƠ LỬNG (0.5s)', '#00d2d3', 18, true));
+        game.floatingTexts.push(new FloatingText(this.x, this.y - 50, '🌪️ THỔI BAY LƠ LỬNG (1.0s)', '#00d2d3', 18, true));
         break;
       }
     }
