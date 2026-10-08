@@ -2288,17 +2288,36 @@ class NetworkManager {
 
   getPeerConfig() {
     return {
-      debug: 1,
+      debug: 2,
       config: {
         iceServers: [
+          // STUN Google
           { urls: 'stun:stun.l.google.com:19302' },
           { urls: 'stun:stun1.l.google.com:19302' },
           { urls: 'stun:stun2.l.google.com:19302' },
           { urls: 'stun:stun3.l.google.com:19302' },
           { urls: 'stun:stun4.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
+          // STUN Cloudflare & Twilio
+          { urls: 'stun:stun.cloudflare.com:3478' },
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          // TURN Server OpenRelay (hỗ trợ chuyển tiếp qua Internet / 4G / Wi-Fi khác nhau)
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
         ],
-        sdpSemantics: 'unified-plan'
+        iceCandidatePoolSize: 10
       }
     };
   }
@@ -2381,11 +2400,23 @@ class NetworkManager {
       try {
         this.peer = new Peer(this.getPeerConfig());
 
-        this.peer.on('open', () => {
+        this.peer.on('open', (myPeerId) => {
+          console.log('Client PeerJS ID:', myPeerId, 'đang kết nối tới Host:', hostPeerId);
           const conn = this.peer.connect(hostPeerId, {
             reliable: true
           });
           this.setupClientConnection(conn);
+
+          // Kiểm tra nếu sau 8s chưa vào được phòng thì thử kết nối lại
+          setTimeout(() => {
+            if (this.inRoom && this.isClient && (!this.myPlayerId || this.myPlayerId === 'p1')) {
+              console.warn('Kết nối chưa mở sau 8s, thử kết nối lại...');
+              if (this.peer && !this.peer.destroyed) {
+                const retryConn = this.peer.connect(hostPeerId, { reliable: true });
+                this.setupClientConnection(retryConn);
+              }
+            }
+          }, 8000);
         });
 
         this.peer.on('error', (err) => {
@@ -2427,13 +2458,22 @@ class NetworkManager {
   }
 
   handleIncomingClientConnection(conn) {
-    conn.on('open', () => {});
+    console.log('Host nhận kết nối từ peer:', conn.peer);
+
+    conn.on('open', () => {
+      console.log('Host: DataConnection đã OPEN với:', conn.peer);
+    });
 
     conn.on('data', (data) => {
       this.handleMessage(data, conn);
     });
 
+    conn.on('error', (err) => {
+      console.warn('Host: DataConnection error với ' + conn.peer, err);
+    });
+
     conn.on('close', () => {
+      console.log('Host: DataConnection đã đóng với:', conn.peer);
       for (let [id, client] of this.clients.entries()) {
         if (client.conn === conn) {
           this.clients.delete(id);
@@ -2452,30 +2492,42 @@ class NetworkManager {
   setupClientConnection(conn) {
     this.hostConn = conn;
 
-    conn.on('open', () => {
-      console.log('Đã kết nối WebRTC tới Host!');
-      // Gửi request tham gia ngay khi kết nối mở
-      const sendJoin = () => {
-        if (this.hostConn && this.hostConn.open && (!this.myPlayerId || this.myPlayerId === 'p1')) {
-          this.sendToHost({
-            type: 'CLIENT_JOIN_REQUEST',
-            nickname: this.myNickname,
-            equip: this.getMyEquip()
-          });
-        }
-      };
+    const doSendJoin = () => {
+      if (this.hostConn && this.hostConn.open) {
+        console.log('Client gửi CLIENT_JOIN_REQUEST tới Host...');
+        this.sendToHost({
+          type: 'CLIENT_JOIN_REQUEST',
+          nickname: this.myNickname,
+          equip: this.getMyEquip()
+        });
+      }
+    };
 
-      sendJoin();
-      // Retry sau 600ms và 1200ms nếu chưa nhận được HOST_WELCOME
-      setTimeout(sendJoin, 600);
-      setTimeout(sendJoin, 1200);
+    conn.on('open', () => {
+      console.log('Client: Kết nối WebRTC tới Host đã OPEN!');
+      doSendJoin();
+      // Retry sau 500ms, 1000ms, 2000ms nếu chưa nhận được gán ID từ Host
+      setTimeout(() => {
+        if (!this.myPlayerId || this.myPlayerId === 'p1') doSendJoin();
+      }, 500);
+      setTimeout(() => {
+        if (!this.myPlayerId || this.myPlayerId === 'p1') doSendJoin();
+      }, 1000);
+      setTimeout(() => {
+        if (!this.myPlayerId || this.myPlayerId === 'p1') doSendJoin();
+      }, 2000);
     });
 
     conn.on('data', (data) => {
       this.handleMessage(data);
     });
 
+    conn.on('error', (err) => {
+      console.warn('Client: DataConnection error:', err);
+    });
+
     conn.on('close', () => {
+      console.log('Client: DataConnection đã đóng.');
       if (this.game.state === 'PLAYING') {
         alert('Mất kết nối với Chủ phòng (Host)! Đang trở về sảnh chờ...');
         this.game.goToLobby();
