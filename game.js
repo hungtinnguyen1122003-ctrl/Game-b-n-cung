@@ -1818,9 +1818,6 @@ class Character {
       if (this.statusEffects.slow > 0) effectiveSpeed *= 0.5;
       if (this.statusEffects.root > 0) effectiveSpeed = 0; // Bị giữ chân bởi lốc xoáy địa hình, không thể di chuyển
       this.x += this.vx * effectiveSpeed * dt;
-
-      // Hướng nhìn tự động bám sát góc nhắm (vẫn xoay trái phải bình thường)
-      this.facingRight = Math.cos(this.aimAngle) >= 0;
     }
 
     // Trọng lực rơi (ngừng rơi hoàn toàn khi bị hiệu ứng treo lơ lửng)
@@ -2025,14 +2022,35 @@ class Character {
     this.isCrouching = isDown;
   }
 
-  // ĐIỀU CHỈNH QUAY HƯỚNG & LẬT ĐỐI XỨNG GÓC NHẮM
+  getElevation() {
+    if (this.facingRight) {
+      return -this.aimAngle;
+    } else {
+      let diff = this.aimAngle;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      return diff < 0 ? diff + Math.PI : diff - Math.PI;
+    }
+  }
+
+  setElevation(elev) {
+    // Giới hạn góc ngẩng từ -1.25 rad (~ -72 độ chúc xuống) đến 1.40 rad (~ +80 độ ngẩng lên)
+    const clamped = Math.max(-1.25, Math.min(1.40, elev));
+    if (this.facingRight) {
+      this.aimAngle = -clamped;
+    } else {
+      let ang = -Math.PI + clamped;
+      if (ang < -Math.PI) ang += Math.PI * 2;
+      this.aimAngle = ang;
+    }
+  }
+
+  // ĐIỀU CHỈNH QUAY HƯỚNG & BẢO TOÀN GÓC NHẮM
   setFacing(toRight) {
     if (this.facingRight === toRight || this.isDead) return;
-    this.facingRight = toRight;
-    // Lật góc nhắm đối xứng gương qua trục thẳng đứng Y:
-    const sinA = Math.sin(this.aimAngle);
-    const cosA = Math.cos(this.aimAngle);
-    this.aimAngle = Math.atan2(sinA, -cosA);
+    const curElev = this.getElevation();
+    this.facingRight = !!toRight;
+    this.setElevation(curElev);
   }
 
   takeDamage(arrow, hitboxName) {
@@ -3002,6 +3020,9 @@ class NetworkManager {
     this.lastStateSyncTime = 0;
 
     // Trạng thái ngắm & di chuyển nội bộ của Client để phản hồi tức thời
+    this.localAimAngle = -0.4;
+    this.localFacingRight = true;
+
     // Cấu hình Metered Open Relay TURN
     this.meteredAppDomain = localStorage.getItem('metered_app_domain') || '';
     this.meteredApiKey = localStorage.getItem('metered_api_key') || '';
@@ -3751,9 +3772,13 @@ class NetworkManager {
           const player = this.game.players.find(p => p.id === msg.fromId);
           if (player && !player.isDead) {
             player.vx = msg.vx;
-            player.setFacing(msg.facing);
+            if (typeof msg.facing === 'boolean') {
+              player.facingRight = msg.facing;
+            }
             player.crouch(msg.crouch);
-            player.aimAngle = msg.aimAngle;
+            if (typeof msg.aimAngle === 'number' && !isNaN(msg.aimAngle)) {
+              player.aimAngle = msg.aimAngle;
+            }
           }
           break;
         }
@@ -4263,64 +4288,122 @@ class InputHandler {
     p1.vx = 0;
     const isRooted = p1.statusEffects && p1.statusEffects.root > 0;
 
+    // Di chuyển và quay hướng Trái / Phải (A / D)
     if (this.keys['a']) {
       if (!isRooted) p1.vx = -1;
-      p1.setFacing(false); // Vẫn quay trái bình thường
+      p1.setFacing(false);
     }
     if (this.keys['d']) {
       if (!isRooted) p1.vx = 1;
-      p1.setFacing(true); // Vẫn quay phải bình thường
+      p1.setFacing(true);
     }
 
     p1.crouch(!!this.keys['s']);
 
+    // Điều chỉnh góc ngắm (Aiming):
+    // - Phím Mũi tên Lên (↑) / Xuống (↓): Nâng cao / Hạ thấp góc ngắm
+    // - Phím Mũi tên Trái (←) / Phải (→): Xoay góc ngắm tương ứng theo hướng
     const angleSpeed = 0.04;
-    if (this.keys['ArrowLeft'] || this.keys['arrowleft']) p1.aimAngle -= angleSpeed;
-    if (this.keys['ArrowRight'] || this.keys['arrowright']) p1.aimAngle += angleSpeed;
+    let curElev = p1.getElevation();
+    let elevChanged = false;
+
+    if (this.keys['arrowup'] || this.keys['ArrowUp']) {
+      curElev += angleSpeed;
+      elevChanged = true;
+    }
+    if (this.keys['arrowdown'] || this.keys['ArrowDown']) {
+      curElev -= angleSpeed;
+      elevChanged = true;
+    }
+    if (this.keys['arrowleft'] || this.keys['ArrowLeft']) {
+      if (p1.facingRight) curElev += angleSpeed;
+      else curElev -= angleSpeed;
+      elevChanged = true;
+    }
+    if (this.keys['arrowright'] || this.keys['ArrowRight']) {
+      if (p1.facingRight) curElev -= angleSpeed;
+      else curElev += angleSpeed;
+      elevChanged = true;
+    }
+
+    if (elevChanged) {
+      p1.setElevation(curElev);
+    }
   }
 
   handleClientInput() {
     if (!this.game.network.isClient) return;
 
-    let vx = 0;
-    let facing = this.game.network.localFacingRight;
     const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
-    const isRooted = myChar && myChar.statusEffects && myChar.statusEffects.root > 0;
+    if (!myChar || myChar.isDead) return;
 
+    // Đảm bảo localFacingRight và localAimAngle luôn được đồng bộ khởi tạo
+    if (this.game.network.localFacingRight === undefined) {
+      this.game.network.localFacingRight = myChar.facingRight;
+    }
+    if (this.game.network.localAimAngle === undefined || isNaN(this.game.network.localAimAngle)) {
+      this.game.network.localAimAngle = myChar.aimAngle;
+    }
+
+    let vx = 0;
+    const isRooted = myChar.statusEffects && myChar.statusEffects.root > 0;
+
+    // Di chuyển và quay hướng Trái / Phải (A / D)
     if (this.keys['a']) {
       if (!isRooted) vx = -1;
-      if (facing) {
-        facing = false;
-        const sinA = Math.sin(this.game.network.localAimAngle);
-        const cosA = Math.cos(this.game.network.localAimAngle);
-        this.game.network.localAimAngle = Math.atan2(sinA, -cosA);
+      if (this.game.network.localFacingRight) {
+        myChar.setFacing(false);
+        this.game.network.localFacingRight = false;
+        this.game.network.localAimAngle = myChar.aimAngle;
       }
     }
     if (this.keys['d']) {
       if (!isRooted) vx = 1;
-      if (!facing) {
-        facing = true;
-        const sinA = Math.sin(this.game.network.localAimAngle);
-        const cosA = Math.cos(this.game.network.localAimAngle);
-        this.game.network.localAimAngle = Math.atan2(sinA, -cosA);
+      if (!this.game.network.localFacingRight) {
+        myChar.setFacing(true);
+        this.game.network.localFacingRight = true;
+        this.game.network.localAimAngle = myChar.aimAngle;
       }
     }
-    this.game.network.localFacingRight = facing;
 
+    // Điều chỉnh góc ngắm (Aiming):
+    // - Phím Mũi tên Lên (↑) / Xuống (↓) / Trái (←) / Phải (→)
     const angleSpeed = 0.04;
-    if (this.keys['ArrowLeft'] || this.keys['arrowleft']) this.game.network.localAimAngle -= angleSpeed;
-    if (this.keys['ArrowRight'] || this.keys['arrowright']) this.game.network.localAimAngle += angleSpeed;
+    let curElev = myChar.getElevation();
+    let elevChanged = false;
 
-    if (myChar) {
-      myChar.aimAngle = this.game.network.localAimAngle;
-      myChar.facingRight = facing;
-      if (isRooted) myChar.vx = 0;
+    if (this.keys['arrowup'] || this.keys['ArrowUp']) {
+      curElev += angleSpeed;
+      elevChanged = true;
     }
+    if (this.keys['arrowdown'] || this.keys['ArrowDown']) {
+      curElev -= angleSpeed;
+      elevChanged = true;
+    }
+    if (this.keys['arrowleft'] || this.keys['ArrowLeft']) {
+      if (this.game.network.localFacingRight) curElev += angleSpeed;
+      else curElev -= angleSpeed;
+      elevChanged = true;
+    }
+    if (this.keys['arrowright'] || this.keys['ArrowRight']) {
+      if (this.game.network.localFacingRight) curElev -= angleSpeed;
+      else curElev += angleSpeed;
+      elevChanged = true;
+    }
+
+    if (elevChanged) {
+      myChar.setElevation(curElev);
+      this.game.network.localAimAngle = myChar.aimAngle;
+    }
+
+    myChar.facingRight = this.game.network.localFacingRight;
+    myChar.aimAngle = this.game.network.localAimAngle;
+    if (!isRooted) myChar.vx = vx;
 
     this.game.network.sendToHost({
       type: 'CLIENT_INPUT',
       vx: isRooted ? 0 : vx,
-      facing: facing,
+      facing: this.game.network.localFacingRight,
       crouch: !!this.keys['s'],
       aimAngle: this.game.network.localAimAngle
     });
@@ -4754,6 +4837,12 @@ class GameManager {
     this.blindBagSpawnTimer = 7;
     this.pendingHitEvents = [];
 
+    const myChar = this.players.find(p => p.id === 'p1');
+    if (myChar) {
+      this.network.localFacingRight = myChar.facingRight;
+      this.network.localAimAngle = myChar.aimAngle;
+    }
+
     // Gửi thông báo bắt đầu trận đấu cho tất cả Client
     this.network.broadcastToClients({
       type: 'START_MATCH',
@@ -4785,6 +4874,12 @@ class GameManager {
       }
       return char;
     });
+
+    const myChar = this.players.find(p => p.id === this.network.myPlayerId);
+    if (myChar) {
+      this.network.localFacingRight = myChar.facingRight;
+      this.network.localAimAngle = myChar.aimAngle;
+    }
 
     this.arrows = [];
     this.aoeZones = [];
