@@ -1150,15 +1150,15 @@ body {
 
 .map-options-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
 }
 
 .map-card {
   background: rgba(255, 255, 255, 0.06);
   border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   cursor: pointer;
   transition: all 0.25s ease;
   position: relative;
@@ -1176,6 +1176,24 @@ body {
   box-shadow: 0 4px 15px rgba(46, 213, 115, 0.35);
 }
 
+.map-card[data-map="random"] {
+  background: linear-gradient(135deg, rgba(255, 107, 129, 0.12), rgba(254, 202, 87, 0.12), rgba(72, 219, 251, 0.12));
+}
+
+.map-card[data-map="random"].active {
+  border-color: #feca57;
+  background: linear-gradient(135deg, rgba(255, 107, 129, 0.25), rgba(254, 202, 87, 0.25), rgba(72, 219, 251, 0.25));
+  box-shadow: 0 4px 18px rgba(254, 202, 87, 0.45);
+  animation: rainbowBorder 3s infinite linear;
+}
+
+@keyframes rainbowBorder {
+  0% { border-color: #ff6b81; }
+  33% { border-color: #feca57; }
+  66% { border-color: #48dbfb; }
+  100% { border-color: #ff6b81; }
+}
+
 .map-card[data-map="volcano"].active {
   border-color: #ff4757;
   background: rgba(255, 71, 87, 0.18);
@@ -1186,6 +1204,24 @@ body {
   border-color: #70a1ff;
   background: rgba(112, 161, 255, 0.18);
   box-shadow: 0 4px 15px rgba(112, 161, 255, 0.35);
+}
+
+.map-card[data-map="skyisland"].active {
+  border-color: #fbc531;
+  background: rgba(251, 197, 49, 0.2);
+  box-shadow: 0 4px 15px rgba(251, 197, 49, 0.4);
+}
+
+.map-card[data-map="crystal"].active {
+  border-color: #9b59b6;
+  background: rgba(155, 89, 182, 0.22);
+  box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+}
+
+.map-card[data-map="desert"].active {
+  border-color: #e67e22;
+  background: rgba(230, 126, 34, 0.2);
+  box-shadow: 0 4px 15px rgba(230, 126, 34, 0.4);
 }
 
 .map-card-badge {
@@ -1944,5 +1980,216 @@ body {
   gap: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 14px;
+}
+
+/* ============================================================================
+   BỘ ĐIỀU KHIỂN CẢM ỨNG TRÊN ĐIỆN THOẠI (MOBILE TOUCH CONTROLS)
+============================================================================ */
+.touch-controls-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 60;
+  display: none;
+}
+
+.touch-controls-container.visible {
+  display: block;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-controls-container {
+    display: block;
+  }
+}
+
+.touch-left-panel {
+  position: absolute;
+  bottom: 22px;
+  left: 20px;
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 65;
+}
+
+.touch-right-panel {
+  position: absolute;
+  bottom: 22px;
+  right: 20px;
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 65;
+}
+
+.touch-aim-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.t-btn {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(18, 26, 42, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+}
+
+.t-btn:active,
+.t-btn.active {
+  transform: scale(0.92);
+  filter: brightness(1.28);
+}
+
+.t-btn-move {
+  width: 58px;
+  height: 56px;
+  border-color: rgba(46, 213, 115, 0.5);
+}
+
+.t-btn-move:active,
+.t-btn-move.active {
+  background: rgba(46, 213, 115, 0.4);
+  border-color: #2ed573;
+  box-shadow: 0 0 16px rgba(46, 213, 115, 0.7);
+}
+
+.t-btn-crouch {
+  width: 52px;
+  height: 52px;
+  border-color: rgba(155, 89, 182, 0.45);
+}
+
+.t-btn-crouch:active,
+.t-btn-crouch.active {
+  background: rgba(155, 89, 182, 0.4);
+  border-color: #9b59b6;
+  box-shadow: 0 0 16px rgba(155, 89, 182, 0.7);
+}
+
+.t-btn-aim {
+  width: 66px;
+  height: 42px;
+  border-color: rgba(0, 210, 211, 0.45);
+}
+
+.t-btn-aim:active,
+.t-btn-aim.active {
+  background: rgba(0, 210, 211, 0.4);
+  border-color: #00d2d3;
+  box-shadow: 0 0 16px rgba(0, 210, 211, 0.7);
+}
+
+.t-btn-jump {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border-color: rgba(30, 144, 255, 0.55);
+}
+
+.t-btn-jump:active,
+.t-btn-jump.active {
+  background: rgba(30, 144, 255, 0.45);
+  border-color: #1e90ff;
+  box-shadow: 0 0 18px rgba(30, 144, 255, 0.75);
+}
+
+.t-btn-shoot {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255, 71, 87, 0.85), rgba(255, 165, 2, 0.85));
+  border: 3px solid #ff4757;
+  box-shadow: 0 0 18px rgba(255, 71, 87, 0.65);
+}
+
+.t-btn-shoot:active,
+.t-btn-shoot.charging {
+  transform: scale(0.94);
+  background: linear-gradient(135deg, #ff4757, #ffa502);
+  border-color: #ffd32a;
+  box-shadow: 0 0 28px rgba(255, 211, 42, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.5);
+  animation: touchPulse 0.4s infinite alternate;
+}
+
+@keyframes touchPulse {
+  0% { box-shadow: 0 0 16px rgba(255, 71, 87, 0.8); }
+  100% { box-shadow: 0 0 32px rgba(255, 211, 42, 1); }
+}
+
+.t-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.t-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-top: 2px;
+  pointer-events: none;
+}
+
+.t-sublabel {
+  font-size: 0.52rem;
+  color: #ffd32a;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 1px;
+  pointer-events: none;
+}
+
+/* Tối ưu màn hình cảm ứng di động xoay ngang */
+@media (max-width: 900px) {
+  .touch-left-panel {
+    bottom: 12px;
+    left: 10px;
+    gap: 6px;
+  }
+  .touch-right-panel {
+    bottom: 12px;
+    right: 10px;
+    gap: 8px;
+  }
+  .t-btn-move {
+    width: 52px;
+    height: 50px;
+  }
+  .t-btn-crouch {
+    width: 48px;
+    height: 48px;
+  }
+  .t-btn-aim {
+    width: 58px;
+    height: 38px;
+  }
+  .t-btn-jump {
+    width: 54px;
+    height: 54px;
+  }
+  .t-btn-shoot {
+    width: 70px;
+    height: 70px;
+  }
 }
 

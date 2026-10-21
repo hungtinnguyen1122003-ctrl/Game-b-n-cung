@@ -171,7 +171,7 @@ const MAP_CONFIGS = {
   jungle: {
     id: 'jungle',
     name: 'Thung Lũng Cổ Thụ',
-    skyColors: ['#1e3799', '#38ada9', '#b8e994'],
+    skyColors: ['#0c2461', '#1e3799', '#2ed573'],
     mountainColor1: '#079992',
     mountainColor2: '#38ada9',
     groundColor: '#1e272e',
@@ -179,28 +179,31 @@ const MAP_CONFIGS = {
     flowerColor: '#ff4757',
     pits: [],
     spawns: [
-      { x: 135, y: 520, facing: true },
-      { x: 1145, y: 520, facing: false },
-      { x: 640, y: 250, facing: true },
-      { x: 140, y: 390, facing: true },
-      { x: 1140, y: 390, facing: false }
+      { x: 120, y: 500, facing: true },
+      { x: 1160, y: 500, facing: false },
+      { x: 640, y: 220, facing: true },
+      { x: 350, y: 380, facing: true },
+      { x: 930, y: 380, facing: false }
     ],
     platforms: [
-      // 2 Tháp quan sát ở 2 bên biên, để trống 800px thung lũng ở giữa cho đường bay tên cực xa
-      { x: 50, y: 520, width: 170, height: 16, type: 'platform', style: 'moss_wood' },
-      { x: 80, y: 390, width: 120, height: 14, type: 'platform', style: 'moss_wood' },
-
-      { x: 1060, y: 520, width: 170, height: 16, type: 'platform', style: 'moss_wood' },
-      { x: 1080, y: 390, width: 120, height: 14, type: 'platform', style: 'moss_wood' },
-
-      // Cành đại thụ lơ lửng trên cao ở trung tâm
-      { x: 550, y: 250, width: 180, height: 14, type: 'platform', style: 'moss_wood' }
+      // Tháp gỗ 2 bên biên
+      { x: 40, y: 500, width: 170, height: 18, type: 'platform', style: 'moss_wood' },
+      { x: 1070, y: 500, width: 170, height: 18, type: 'platform', style: 'moss_wood' },
+      // Bục trung tâm tầng 2
+      { x: 280, y: 380, width: 150, height: 16, type: 'platform', style: 'moss_wood' },
+      { x: 850, y: 380, width: 150, height: 16, type: 'platform', style: 'moss_wood' },
+      // Cầu treo thung lũng & Cành đại thụ đỉnh vòm
+      { x: 500, y: 440, width: 280, height: 16, type: 'platform', style: 'moss_wood' },
+      { x: 520, y: 220, width: 240, height: 16, type: 'platform', style: 'moss_wood' },
+      // Bệ Nấm Nhún Rừng Rậm (Jump Pad) bật cao
+      { x: 190, y: 616, width: 70, height: 14, type: 'jump_pad', style: 'mushroom_pad', color: '#2ed573', boostForce: -800 },
+      { x: 1020, y: 616, width: 70, height: 14, type: 'jump_pad', style: 'mushroom_pad', color: '#2ed573', boostForce: -800 }
     ]
   },
   volcano: {
     id: 'volcano',
     name: 'Vực Sâu Dung Nham',
-    skyColors: ['#1e272e', '#c0392b', '#e67e22'],
+    skyColors: ['#1e272e', '#c0392b', '#f39c12'],
     mountainColor1: '#2c3e50',
     mountainColor2: '#962d3e',
     groundColor: '#1e272e',
@@ -208,25 +211,30 @@ const MAP_CONFIGS = {
     flowerColor: '#f39c12',
     pits: [],
     spawns: [
-      { x: 155, y: 530, facing: true },
-      { x: 1125, y: 530, facing: false },
-      { x: 640, y: 330, facing: true },
-      { x: 350, y: 440, facing: true },
-      { x: 925, y: 440, facing: false }
+      { x: 130, y: 510, facing: true },
+      { x: 1150, y: 510, facing: false },
+      { x: 640, y: 260, facing: true },
+      { x: 380, y: 390, facing: true },
+      { x: 900, y: 390, facing: false }
     ],
     platforms: [
-      // Quần đảo đá bazan nổi so le ziczac bậc thang vòm cung mở, hoàn toàn thông thoáng tầm mắt
-      { x: 80, y: 530, width: 150, height: 16, type: 'platform', style: 'basalt' },
-      { x: 290, y: 440, width: 130, height: 14, type: 'platform', style: 'basalt' },
-      { x: 565, y: 330, width: 150, height: 14, type: 'platform', style: 'basalt' },
-      { x: 860, y: 440, width: 130, height: 14, type: 'platform', style: 'basalt' },
-      { x: 1050, y: 530, width: 150, height: 16, type: 'platform', style: 'basalt' }
+      // Quần đảo đá bazan 3 tầng so le
+      { x: 50, y: 510, width: 160, height: 18, type: 'platform', style: 'basalt' },
+      { x: 1070, y: 510, width: 160, height: 18, type: 'platform', style: 'basalt' },
+      { x: 300, y: 390, width: 160, height: 16, type: 'platform', style: 'basalt' },
+      { x: 820, y: 390, width: 160, height: 16, type: 'platform', style: 'basalt' },
+      { x: 530, y: 260, width: 220, height: 16, type: 'platform', style: 'basalt' },
+      // Trụ thạch trụ cản tên
+      { x: 625, y: 440, width: 30, height: 180, type: 'pillar', style: 'basalt_pillar' },
+      // Bệ Phun Nhiệt Núi Lửa (Jump Pad)
+      { x: 235, y: 616, width: 65, height: 14, type: 'jump_pad', style: 'fire_vent', color: '#ff4757', boostForce: -820 },
+      { x: 980, y: 616, width: 65, height: 14, type: 'jump_pad', style: 'fire_vent', color: '#ff4757', boostForce: -820 }
     ]
   },
   icecave: {
     id: 'icecave',
-    name: 'Đồi Tuyết Vô Tận',
-    skyColors: ['#0c2461', '#1e3799', '#82ccdd'],
+    name: 'Đỉnh Băng Vĩnh Cửu',
+    skyColors: ['#0a3d62', '#1e3799', '#70a1ff'],
     mountainColor1: '#60a3bc',
     mountainColor2: '#4a69bd',
     groundColor: '#0a3d62',
@@ -234,19 +242,114 @@ const MAP_CONFIGS = {
     flowerColor: '#dff9fb',
     pits: [],
     spawns: [
-      { x: 145, y: 480, facing: true },
-      { x: 1130, y: 490, facing: false },
-      { x: 510, y: 410, facing: true },
-      { x: 800, y: 410, facing: false },
-      { x: 145, y: 320, facing: true }
+      { x: 130, y: 460, facing: true },
+      { x: 1150, y: 460, facing: false },
+      { x: 640, y: 210, facing: true },
+      { x: 390, y: 330, facing: true },
+      { x: 890, y: 330, facing: false }
     ],
     platforms: [
-      // Bờ vách băng bất đối xứng: sườn dốc cao phía Tây và các tảng băng trôi lơ lửng giữa trời
-      { x: 50, y: 480, width: 190, height: 16, type: 'platform', style: 'ice_shelf' },
-      { x: 80, y: 320, width: 130, height: 14, type: 'platform', style: 'ice_shelf' },
-      { x: 450, y: 410, width: 120, height: 14, type: 'platform', style: 'ice_shelf' },
-      { x: 740, y: 410, width: 120, height: 14, type: 'platform', style: 'ice_shelf' },
-      { x: 1030, y: 490, width: 200, height: 16, type: 'platform', style: 'ice_shelf' }
+      // Vách băng dốc đứng & các tảng băng trôi đa tầng
+      { x: 50, y: 460, width: 170, height: 18, type: 'platform', style: 'ice_shelf' },
+      { x: 1060, y: 460, width: 170, height: 18, type: 'platform', style: 'ice_shelf' },
+      { x: 310, y: 330, width: 160, height: 16, type: 'platform', style: 'ice_shelf' },
+      { x: 810, y: 330, width: 160, height: 16, type: 'platform', style: 'ice_shelf' },
+      { x: 530, y: 210, width: 220, height: 16, type: 'platform', style: 'ice_shelf' },
+      { x: 550, y: 470, width: 180, height: 16, type: 'platform', style: 'ice_shelf' },
+      // Bệ Phun Băng Tuyết (Jump Pad)
+      { x: 235, y: 616, width: 65, height: 14, type: 'jump_pad', style: 'frost_geyser', color: '#70a1ff', boostForce: -790 },
+      { x: 980, y: 616, width: 65, height: 14, type: 'jump_pad', style: 'frost_geyser', color: '#70a1ff', boostForce: -790 }
+    ]
+  },
+  skyisland: {
+    id: 'skyisland',
+    name: 'Đảo Bay Thần Thoại',
+    skyColors: ['#2c2c54', '#474787', '#fbc531'],
+    mountainColor1: '#706fd3',
+    mountainColor2: '#f5cd79',
+    groundColor: '#192a56',
+    groundTopColor: '#fbc531',
+    flowerColor: '#ffffff',
+    pits: [],
+    spawns: [
+      { x: 160, y: 480, facing: true },
+      { x: 1120, y: 480, facing: false },
+      { x: 640, y: 190, facing: true },
+      { x: 360, y: 350, facing: true },
+      { x: 920, y: 350, facing: false }
+    ],
+    platforms: [
+      // Quần đảo bay thần thoại trên biển mây
+      { x: 70, y: 480, width: 190, height: 20, type: 'platform', style: 'sky_stone' },
+      { x: 1020, y: 480, width: 190, height: 20, type: 'platform', style: 'sky_stone' },
+      { x: 270, y: 350, width: 180, height: 18, type: 'platform', style: 'sky_stone' },
+      { x: 830, y: 350, width: 180, height: 18, type: 'platform', style: 'sky_stone' },
+      { x: 510, y: 190, width: 260, height: 20, type: 'platform', style: 'sky_stone' },
+      { x: 530, y: 430, width: 220, height: 16, type: 'platform', style: 'sky_stone' },
+      // Bệ Phong Lôi Thần Thánh (Jump Pad)
+      { x: 200, y: 616, width: 70, height: 14, type: 'jump_pad', style: 'wind_pad', color: '#fbc531', boostForce: -840 },
+      { x: 1010, y: 616, width: 70, height: 14, type: 'jump_pad', style: 'wind_pad', color: '#fbc531', boostForce: -840 }
+    ]
+  },
+  crystal: {
+    id: 'crystal',
+    name: 'Động Pha Lê Huyền Bí',
+    skyColors: ['#130f40', '#30336b', '#192a56'],
+    mountainColor1: '#8c7ae6',
+    mountainColor2: '#5f27cd',
+    groundColor: '#1e272e',
+    groundTopColor: '#9b59b6',
+    flowerColor: '#00d2d3',
+    pits: [],
+    spawns: [
+      { x: 140, y: 490, facing: true },
+      { x: 1140, y: 490, facing: false },
+      { x: 640, y: 230, facing: true },
+      { x: 380, y: 360, facing: true },
+      { x: 900, y: 360, facing: false }
+    ],
+    platforms: [
+      // Giàn giáo hầm mỏ & phiến tinh thể thạch anh
+      { x: 50, y: 490, width: 170, height: 18, type: 'platform', style: 'crystal_shelf' },
+      { x: 1060, y: 490, width: 170, height: 18, type: 'platform', style: 'crystal_shelf' },
+      { x: 290, y: 360, width: 170, height: 16, type: 'platform', style: 'crystal_shelf' },
+      { x: 820, y: 360, width: 170, height: 16, type: 'platform', style: 'crystal_shelf' },
+      { x: 520, y: 230, width: 240, height: 18, type: 'platform', style: 'crystal_shelf' },
+      { x: 540, y: 480, width: 200, height: 16, type: 'platform', style: 'crystal_shelf' },
+      // Bệ Tinh Thể Năng Lượng (Jump Pad)
+      { x: 220, y: 616, width: 68, height: 14, type: 'jump_pad', style: 'crystal_pad', color: '#9b59b6', boostForce: -810 },
+      { x: 992, y: 616, width: 68, height: 14, type: 'jump_pad', style: 'crystal_pad', color: '#9b59b6', boostForce: -810 }
+    ]
+  },
+  desert: {
+    id: 'desert',
+    name: 'Tàn Tích Sa Mạc',
+    skyColors: ['#b33939', '#e17055', '#ffeaa7'],
+    mountainColor1: '#cd6133',
+    mountainColor2: '#f39c12',
+    groundColor: '#d35400',
+    groundTopColor: '#f1c40f',
+    flowerColor: '#e67e22',
+    pits: [],
+    spawns: [
+      { x: 150, y: 520, facing: true },
+      { x: 1130, y: 520, facing: false },
+      { x: 640, y: 240, facing: true },
+      { x: 420, y: 370, facing: true },
+      { x: 860, y: 370, facing: false }
+    ],
+    platforms: [
+      // Kim tự tháp bậc thang cổ đại & ban công đền thờ
+      { x: 60, y: 520, width: 180, height: 18, type: 'platform', style: 'sandstone' },
+      { x: 1040, y: 520, width: 180, height: 18, type: 'platform', style: 'sandstone' },
+      { x: 330, y: 370, width: 170, height: 16, type: 'platform', style: 'sandstone' },
+      { x: 780, y: 370, width: 170, height: 16, type: 'platform', style: 'sandstone' },
+      { x: 500, y: 240, width: 280, height: 18, type: 'platform', style: 'sandstone' },
+      // Cột sa thạch cản gió
+      { x: 250, y: 440, width: 26, height: 180, type: 'pillar', style: 'sandstone_pillar' },
+      { x: 1004, y: 440, width: 26, height: 180, type: 'pillar', style: 'sandstone_pillar' },
+      // Bệ Nhún Cát Lốc Xoáy (Jump Pad)
+      { x: 605, y: 616, width: 70, height: 14, type: 'jump_pad', style: 'sand_pad', color: '#f39c12', boostForce: -830 }
     ]
   }
 };
@@ -301,6 +404,23 @@ class SoundManager {
       gain.connect(this.ctx.destination);
       osc.start();
       osc.stop(this.ctx.currentTime + 0.14);
+    } catch(e) {}
+  }
+
+  playJumpPad() {
+    if (!this.enabled || !this.ctx) return;
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(920, this.ctx.currentTime + 0.22);
+      gain.gain.setValueAtTime(0.26, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.22);
     } catch(e) {}
   }
 
@@ -1840,6 +1960,36 @@ class Character {
             this.vy = 0;
             this.isGrounded = true;
             this.jumpCount = 0; // Hồi lại số lần nhảy khi tiếp đất
+            break;
+          }
+        }
+      } else if (plat.type === 'jump_pad') {
+        const charFoot = this.y;
+        const prevFoot = this.y - this.vy * dt;
+        if (this.x + this.width * 0.35 > plat.x && this.x - this.width * 0.35 < plat.x + plat.width) {
+          if (prevFoot <= plat.y + 12 && charFoot >= plat.y && this.vy >= 0) {
+            this.y = plat.y;
+            this.vy = plat.boostForce || -800; // Bật vút lên trời!
+            this.isGrounded = false;
+            this.jumpCount = 0; // Hồi lại số lần nhảy, cho phép double jump trên không
+            plat.animTimer = 0.3;
+            if (typeof sounds !== 'undefined' && sounds.playJumpPad) sounds.playJumpPad();
+            if (typeof game !== 'undefined' && game.particles) {
+              const pColor = plat.color || '#2ed573';
+              for (let i = 0; i < 16; i++) {
+                game.particles.push(new Particle(
+                  plat.x + Math.random() * plat.width,
+                  plat.y,
+                  (Math.random() - 0.5) * 90,
+                  -80 - Math.random() * 150,
+                  pColor,
+                  4,
+                  0.45,
+                  'spark'
+                ));
+              }
+              game.particles.push(new Particle(this.x, plat.y, 0, 0, pColor, 1, 0.35, 'shockwave'));
+            }
             break;
           }
         }
@@ -3841,7 +3991,11 @@ class NetworkManager {
 
         case 'ROOM_MAP_SYNC':
           if (msg.mapId) {
-            this.game.applyMapConfig(msg.mapId);
+            this.game.selectedMapMode = msg.mapId;
+            if (msg.mapId !== 'random') {
+              this.game.applyMapConfig(msg.mapId);
+              this.game.renderPreview();
+            }
             this.highlightMapCard(msg.mapId);
           }
           break;
@@ -4202,6 +4356,7 @@ class InputHandler {
     this.game = game;
     this.keys = {};
     this.initListeners();
+    this.initTouchControls();
   }
 
   initListeners() {
@@ -4408,6 +4563,140 @@ class InputHandler {
       aimAngle: this.game.network.localAimAngle
     });
   }
+
+  initTouchControls() {
+    const container = document.getElementById('touch-controls-container');
+    if (!container) return;
+
+    // Tự động bật phím ảo nếu là thiết bị cảm ứng hoặc màn hình di động/tablet
+    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.innerWidth <= 1024);
+    if (isTouchDevice) {
+      container.classList.add('visible');
+    }
+
+    const btnToggle = document.getElementById('btn-touch-toggle');
+    if (btnToggle) {
+      btnToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sounds.init();
+        container.classList.toggle('visible');
+        const nowVisible = container.classList.contains('visible');
+        this.game.floatingTexts.push(new FloatingText(640, 260, nowVisible ? '📱 ĐÃ BẬT PHÍM ẢO' : '📱 ĐÃ TẮT PHÍM ẢO', '#00d2d3', 20, true));
+      });
+    }
+
+    const bindTouchKey = (elemId, keyName) => {
+      const btn = document.getElementById(elemId);
+      if (!btn) return;
+
+      const press = (e) => {
+        if (e.cancelable) e.preventDefault();
+        sounds.init();
+        this.keys[keyName] = true;
+        btn.classList.add('active');
+      };
+
+      const release = (e) => {
+        if (e.cancelable) e.preventDefault();
+        this.keys[keyName] = false;
+        btn.classList.remove('active');
+      };
+
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+    };
+
+    bindTouchKey('touch-left', 'a');
+    bindTouchKey('touch-right', 'd');
+    bindTouchKey('touch-crouch', 's');
+    bindTouchKey('touch-aim-up', 'arrowup');
+    bindTouchKey('touch-aim-down', 'arrowdown');
+
+    // Nút Nhảy (hỗ trợ Double Jump)
+    const btnJump = document.getElementById('touch-jump');
+    if (btnJump) {
+      const doJump = (e) => {
+        if (e.cancelable) e.preventDefault();
+        sounds.init();
+        btnJump.classList.add('active');
+        setTimeout(() => btnJump.classList.remove('active'), 120);
+
+        if (this.game.state !== 'PLAYING') return;
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar && (!myChar.statusEffects.root || myChar.statusEffects.root <= 0)) myChar.jump();
+        } else if (this.game.network.isClient) {
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          if (myChar && (!myChar.statusEffects.root || myChar.statusEffects.root <= 0)) {
+            this.game.network.sendToHost({ type: 'CLIENT_JUMP' });
+          }
+        }
+      };
+      btnJump.addEventListener('touchstart', doJump, { passive: false });
+      btnJump.addEventListener('mousedown', doJump);
+    }
+
+    // Nút Bắn / Tụ Lực
+    const btnShoot = document.getElementById('touch-shoot');
+    if (btnShoot) {
+      const startCharge = (e) => {
+        if (e.cancelable) e.preventDefault();
+        sounds.init();
+        if (this.keys['Space_Held']) return;
+        this.keys['Space_Held'] = true;
+        btnShoot.classList.add('charging');
+
+        if (this.game.state !== 'PLAYING') return;
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar && !myChar.isCharging) myChar.startCharge();
+        } else if (this.game.network.isClient) {
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          if (myChar) {
+            const cost = myChar.getArrowEnergyCost();
+            if (myChar.energy < cost) {
+              sounds.playNoEnergy();
+              this.game.floatingTexts.push(new FloatingText(myChar.x, myChar.y - 65, `⚡ HẾT NĂNG LƯỢNG! (Cần ${cost}⚡)`, '#ffd32a', 18, true));
+              return;
+            }
+            if (!myChar.isCharging) myChar.startCharge();
+          }
+          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_START' });
+        }
+      };
+
+      const releaseCharge = (e) => {
+        if (e.cancelable) e.preventDefault();
+        if (!this.keys['Space_Held']) return;
+        this.keys['Space_Held'] = false;
+        btnShoot.classList.remove('charging');
+
+        if (this.game.state !== 'PLAYING') return;
+        if (this.game.network.isHost) {
+          const myChar = this.game.players.find(p => p.id === 'p1');
+          if (myChar) myChar.releaseCharge();
+        } else if (this.game.network.isClient) {
+          const myChar = this.game.players.find(p => p.id === this.game.network.myPlayerId);
+          const pwr = myChar ? myChar.chargePower : 0;
+          if (myChar) {
+            myChar.isCharging = false;
+            myChar.chargePower = 0;
+          }
+          this.game.network.sendToHost({ type: 'CLIENT_CHARGE_RELEASE', power: pwr });
+        }
+      };
+
+      btnShoot.addEventListener('touchstart', startCharge, { passive: false });
+      btnShoot.addEventListener('touchend', releaseCharge, { passive: false });
+      btnShoot.addEventListener('touchcancel', releaseCharge, { passive: false });
+      btnShoot.addEventListener('mousedown', startCharge);
+      btnShoot.addEventListener('mouseup', releaseCharge);
+    }
+  }
 }
 
 // ============================================================================
@@ -4420,6 +4709,8 @@ class GameManager {
     this.ctx = this.canvas.getContext('2d');
     this.state = 'LOBBY';
     this.currentMapId = 'jungle';
+    this.selectedMapMode = 'jungle';
+    this.lastRandomMapId = null;
 
     this.groundY = 620;
     this.gravity = 520;
@@ -4806,6 +5097,14 @@ class GameManager {
   startMatchAsHost() {
     if (!this.network.isHost) return;
 
+    const mapPool = ['jungle', 'volcano', 'icecave', 'skyisland', 'crystal', 'desert'];
+    const isRandom = (this.selectedMapMode === 'random');
+    if (isRandom) {
+      const candidates = mapPool.filter(m => m !== this.lastRandomMapId);
+      this.currentMapId = candidates[Math.floor(Math.random() * candidates.length)];
+      this.lastRandomMapId = this.currentMapId;
+    }
+
     this.applyMapConfig(this.currentMapId);
     const spawns = MAP_CONFIGS[this.currentMapId].spawns;
     const roomList = this.network.getRoomPlayersList();
@@ -4847,6 +5146,7 @@ class GameManager {
     this.network.broadcastToClients({
       type: 'START_MATCH',
       mapId: this.currentMapId,
+      isRandomPick: isRandom,
       players: roomList
     });
 
@@ -4854,6 +5154,11 @@ class GameManager {
     this.transitionToCombatScreen();
     this.renderCombatHUD();
     this.changeWind();
+
+    if (isRandom) {
+      const mapName = MAP_CONFIGS[this.currentMapId] ? MAP_CONFIGS[this.currentMapId].name : this.currentMapId;
+      this.floatingTexts.push(new FloatingText(640, 240, `🎲 BẢN ĐỒ NGẪU NHIÊN: ${mapName.toUpperCase()}!`, '#ffd32a', 24, true));
+    }
   }
 
   startMatchAsClient(msg) {
@@ -4893,6 +5198,11 @@ class GameManager {
     this.state = 'PLAYING';
     this.transitionToCombatScreen();
     this.renderCombatHUD();
+
+    if (msg.isRandomPick) {
+      const mapName = MAP_CONFIGS[this.currentMapId] ? MAP_CONFIGS[this.currentMapId].name : this.currentMapId;
+      this.floatingTexts.push(new FloatingText(640, 240, `🎲 BẢN ĐỒ NGẪU NHIÊN: ${mapName.toUpperCase()}!`, '#ffd32a', 24, true));
+    }
   }
 
   transitionToCombatScreen() {
@@ -4962,6 +5272,9 @@ class GameManager {
   update(dt) {
     if (this.screenShakeTime > 0) {
       this.screenShakeTime = Math.max(0, this.screenShakeTime - dt);
+    }
+    if (this.platforms) {
+      this.platforms.forEach(p => { if (p.animTimer > 0) p.animTimer -= dt; });
     }
 
     if (this.state !== 'PLAYING') return;
@@ -5777,25 +6090,69 @@ class GameManager {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1280, 720);
 
-    ctx.fillStyle = this.currentMapId === 'volcano' ? 'rgba(87, 96, 111, 0.45)' : 'rgba(255, 255, 255, 0.6)';
-    this.drawCloud(ctx, 220, 120, 55);
-    this.drawCloud(ctx, 680, 80, 70);
-    this.drawCloud(ctx, 1050, 150, 50);
+    // Mây và bối cảnh đặc thù theo từng map
+    if (this.currentMapId === 'volcano') {
+      ctx.fillStyle = 'rgba(87, 96, 111, 0.45)';
+      this.drawCloud(ctx, 220, 120, 55);
+      this.drawCloud(ctx, 680, 80, 70);
+      this.drawCloud(ctx, 1050, 150, 50);
+    } else if (this.currentMapId === 'skyisland') {
+      // Mây thần thoại bồng bềnh
+      ctx.fillStyle = 'rgba(255, 234, 167, 0.55)';
+      this.drawCloud(ctx, 180, 100, 65);
+      this.drawCloud(ctx, 520, 70, 80);
+      this.drawCloud(ctx, 890, 110, 60);
+      this.drawCloud(ctx, 1150, 80, 55);
+    } else if (this.currentMapId === 'desert') {
+      // Mặt trời sa mạc rực đỏ
+      ctx.fillStyle = 'rgba(255, 234, 167, 0.85)';
+      ctx.beginPath();
+      ctx.arc(640, 140, 48, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(230, 126, 34, 0.35)';
+      this.drawCloud(ctx, 320, 130, 60);
+      this.drawCloud(ctx, 960, 110, 70);
+    } else if (this.currentMapId === 'crystal') {
+      // Thạch nhũ pha lê trên vòm trần hang
+      ctx.fillStyle = 'rgba(140, 122, 230, 0.55)';
+      for (let cx = 80; cx < 1220; cx += 150) {
+        ctx.beginPath();
+        ctx.moveTo(cx, 0); ctx.lineTo(cx + 26, 0); ctx.lineTo(cx + 13, 44);
+        ctx.fill();
+      }
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      this.drawCloud(ctx, 220, 120, 55);
+      this.drawCloud(ctx, 680, 80, 70);
+      this.drawCloud(ctx, 1050, 150, 50);
+    }
 
-    ctx.fillStyle = cfg.mountainColor1;
-    ctx.beginPath();
-    ctx.moveTo(0, 620); ctx.lineTo(260, 420); ctx.lineTo(580, 620);
-    ctx.fill();
+    if (this.currentMapId === 'desert') {
+      // Kim tự tháp nền xa
+      ctx.fillStyle = cfg.mountainColor1;
+      ctx.beginPath();
+      ctx.moveTo(60, 620); ctx.lineTo(320, 390); ctx.lineTo(580, 620);
+      ctx.fill();
+      ctx.fillStyle = cfg.mountainColor2;
+      ctx.beginPath();
+      ctx.moveTo(680, 620); ctx.lineTo(920, 410); ctx.lineTo(1160, 620);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = cfg.mountainColor1;
+      ctx.beginPath();
+      ctx.moveTo(0, 620); ctx.lineTo(260, 420); ctx.lineTo(580, 620);
+      ctx.fill();
 
-    ctx.fillStyle = cfg.mountainColor2;
-    ctx.beginPath();
-    ctx.moveTo(480, 620); ctx.lineTo(820, 390); ctx.lineTo(1180, 620);
-    ctx.fill();
+      ctx.fillStyle = cfg.mountainColor2;
+      ctx.beginPath();
+      ctx.moveTo(480, 620); ctx.lineTo(820, 390); ctx.lineTo(1180, 620);
+      ctx.fill();
+    }
 
     // VẼ SÀN ĐẤT VÀ CÁC HỐ TỬ THẦN (PITS)
     const pits = cfg.pits || [];
 
-    // Nếu không có hố: vẽ sàn liền
+    // Nếu không có hố: vẽ sàn liền vững chắc
     if (pits.length === 0) {
       ctx.fillStyle = cfg.groundColor;
       ctx.fillRect(0, this.groundY, 1280, 100);
@@ -5837,62 +6194,6 @@ class GameManager {
           ctx.fill();
         }
       });
-
-      // 2. Vẽ hiệu ứng cảnh báo và đáy vực trong các hố
-      sortedPits.forEach(pit => {
-        if (pit.type === 'lava') {
-          // Vực dung nham sôi sùng sục (Volcano)
-          const lavaGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
-          lavaGrad.addColorStop(0, '#c0392b');
-          lavaGrad.addColorStop(0.3, '#e74c3c');
-          lavaGrad.addColorStop(0.7, '#f39c12');
-          lavaGrad.addColorStop(1, '#d35400');
-          ctx.fillStyle = lavaGrad;
-          ctx.fillRect(pit.x, this.groundY + 28, pit.width, 80);
-
-          // Sóng dung nham nhấp nhô
-          ctx.fillStyle = '#f1c40f';
-          const time = Date.now() / 300;
-          for (let bx = pit.x + 20; bx < pit.x + pit.width - 20; bx += 40) {
-            const by = this.groundY + 30 + Math.sin(time + bx * 0.05) * 5;
-            ctx.beginPath();
-            ctx.arc(bx, by, 6, 0, Math.PI * 2);
-            ctx.fill();
-          }
-
-          // Biển cảnh báo dung nham
-          ctx.fillStyle = 'rgba(231, 76, 60, 0.4)';
-          ctx.fillRect(pit.x, this.groundY, pit.width, 28);
-        } else if (pit.type === 'crevasse') {
-          // Khe nứt băng không đáy (Icecave)
-          const iceGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
-          iceGrad.addColorStop(0, 'rgba(12, 36, 97, 0.9)');
-          iceGrad.addColorStop(1, '#050c1e');
-          ctx.fillStyle = iceGrad;
-          ctx.fillRect(pit.x, this.groundY + 14, pit.width, 90);
-
-          // Nhũ băng nhọn chĩa xuống
-          ctx.fillStyle = 'rgba(130, 204, 221, 0.6)';
-          for (let ix = pit.x + 10; ix < pit.x + pit.width - 10; ix += 35) {
-            ctx.beginPath();
-            ctx.moveTo(ix, this.groundY + 14);
-            ctx.lineTo(ix + 12, this.groundY + 14);
-            ctx.lineTo(ix + 6, this.groundY + 38);
-            ctx.fill();
-          }
-        } else {
-          // Vực thẳm sâu tối tăm (Jungle)
-          const chasmGrad = ctx.createLinearGradient(0, this.groundY, 0, 720);
-          chasmGrad.addColorStop(0, '#0a0e17');
-          chasmGrad.addColorStop(1, '#020408');
-          ctx.fillStyle = chasmGrad;
-          ctx.fillRect(pit.x, this.groundY + 14, pit.width, 90);
-
-          // Sương mù ma quái dưới vực
-          ctx.fillStyle = 'rgba(46, 213, 115, 0.15)';
-          ctx.fillRect(pit.x, this.groundY + 35, pit.width, 50);
-        }
-      });
     }
   }
 
@@ -5908,14 +6209,26 @@ class GameManager {
     ctx.save();
     if (plat.type === 'platform') {
       let topColor = '#2ed573';
-      let bodyColor = '#57606f';
+      let bodyColor = '#2f3542';
 
-      if (this.currentMapId === 'volcano') {
-        topColor = '#e74c3c';
-        bodyColor = '#2f3542';
-      } else if (this.currentMapId === 'icecave') {
-        topColor = '#c7ecee';
-        bodyColor = '#48dbfb';
+      if (plat.style === 'moss_wood' || this.currentMapId === 'jungle') {
+        topColor = '#2ed573';
+        bodyColor = '#2c3e50';
+      } else if (plat.style === 'basalt' || this.currentMapId === 'volcano') {
+        topColor = '#ff4757';
+        bodyColor = '#1e272e';
+      } else if (plat.style === 'ice_shelf' || this.currentMapId === 'icecave') {
+        topColor = '#70a1ff';
+        bodyColor = '#0a3d62';
+      } else if (plat.style === 'sky_stone' || this.currentMapId === 'skyisland') {
+        topColor = '#fbc531';
+        bodyColor = '#2c2c54';
+      } else if (plat.style === 'crystal_shelf' || this.currentMapId === 'crystal') {
+        topColor = '#8c7ae6';
+        bodyColor = '#192a56';
+      } else if (plat.style === 'sandstone' || this.currentMapId === 'desert') {
+        topColor = '#f1c40f';
+        bodyColor = '#d35400';
       }
 
       ctx.fillStyle = bodyColor;
@@ -5926,9 +6239,59 @@ class GameManager {
       ctx.fillStyle = topColor;
       ctx.fillRect(plat.x, plat.y, plat.width, 6);
 
-      ctx.strokeStyle = '#1e272e';
+      ctx.strokeStyle = topColor;
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(plat.x, plat.y, plat.width, plat.height);
+    } else if (plat.type === 'jump_pad') {
+      // Bệ Nhún Bật Cao (Jump Pad)
+      const now = Date.now();
+      const padColor = plat.color || '#2ed573';
+      const isCompressing = plat.animTimer && plat.animTimer > 0;
+      const compression = isCompressing ? Math.sin((plat.animTimer / 0.3) * Math.PI) * 4 : 0;
+
+      // Đế bệ kim loại
+      ctx.fillStyle = '#1e272e';
+      ctx.beginPath();
+      ctx.roundRect(plat.x, plat.y + 4, plat.width, plat.height, [4, 4, 8, 8]);
+      ctx.fill();
+
+      // Đệm lò xo nhún phát sáng
+      ctx.save();
+      const pulse = 0.65 + 0.35 * Math.sin(now / 140);
+      ctx.shadowBlur = 14 * pulse;
+      ctx.shadowColor = padColor;
+      ctx.fillStyle = padColor;
+      ctx.beginPath();
+      ctx.roundRect(plat.x + 3, plat.y + compression, plat.width - 6, plat.height - 2, 6);
+      ctx.fill();
+
+      // Mũi tên hướng lên phát sáng
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('▲▲', plat.x + plat.width / 2, plat.y + plat.height - 1);
+      ctx.restore();
+    } else if (plat.type === 'pillar') {
+      // Cột trụ cản đạn
+      let pillarBody = '#2f3542';
+      let pillarBorder = '#ff4757';
+      if (plat.style === 'sandstone_pillar') {
+        pillarBody = '#d35400';
+        pillarBorder = '#f39c12';
+      }
+      ctx.fillStyle = pillarBody;
+      ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+      ctx.strokeStyle = pillarBorder;
       ctx.lineWidth = 2;
       ctx.strokeRect(plat.x, plat.y, plat.width, plat.height);
+
+      // Vân gạch trên cột
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      for (let py = plat.y + 24; py < plat.y + plat.height; py += 24) {
+        ctx.beginPath();
+        ctx.moveTo(plat.x, py); ctx.lineTo(plat.x + plat.width, py);
+        ctx.stroke();
+      }
     }
     ctx.restore();
   }
@@ -5959,7 +6322,11 @@ class GameManager {
         document.querySelectorAll('.map-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
         const mapId = card.getAttribute('data-map');
-        this.applyMapConfig(mapId);
+        this.selectedMapMode = mapId;
+        if (mapId !== 'random') {
+          this.applyMapConfig(mapId);
+          this.renderPreview();
+        }
         this.network.onHostMapSelect(mapId);
       });
     });
@@ -5997,7 +6364,8 @@ class GameManager {
         if (this.network.isHost) {
           sounds.init();
           this.startMatchAsHost();
-          this.network.broadcastToClients({ type: 'MATCH_REMATCH', mapId: this.currentMapId, players: this.network.getRoomPlayersList() });
+          const isRandom = (this.selectedMapMode === 'random');
+          this.network.broadcastToClients({ type: 'MATCH_REMATCH', mapId: this.currentMapId, isRandomPick: isRandom, players: this.network.getRoomPlayersList() });
         } else {
           alert('Vui lòng chờ Chủ phòng (Host) bấm Tái Đấu!');
         }

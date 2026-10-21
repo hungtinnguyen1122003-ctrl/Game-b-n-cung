@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Đại Chiến Bắn Cung Chibi - Free For All Multiplayer</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -41,15 +41,58 @@
           </div>
           <div class="hud-buttons-row">
             <button id="btn-sound-toggle" class="btn-icon" title="Bật/Tắt âm thanh">🔊</button>
+            <button id="btn-touch-toggle" class="btn-icon" title="Bật/Tắt phím ảo điện thoại">📱</button>
             <button id="btn-back-lobby" class="btn-icon btn-danger" title="Về sảnh">🏳️ Về Sảnh</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Cụm Phím Điều Khiển Cảm Ứng Ảo Trên Điện Thoại (Mobile Touch Controls) -->
+      <div id="touch-controls-container" class="touch-controls-container">
+        <!-- Cụm bên Trái: Di chuyển Trái / Phải & Cúi né -->
+        <div class="touch-left-panel">
+          <button type="button" id="touch-left" class="t-btn t-btn-move" aria-label="Sang trái">
+            <span class="t-icon">◀</span>
+            <span class="t-label">Trái</span>
+          </button>
+          <button type="button" id="touch-crouch" class="t-btn t-btn-crouch" aria-label="Cúi né">
+            <span class="t-icon">▼</span>
+            <span class="t-label">Cúi</span>
+          </button>
+          <button type="button" id="touch-right" class="t-btn t-btn-move" aria-label="Sang phải">
+            <span class="t-icon">▶</span>
+            <span class="t-label">Phải</span>
+          </button>
+        </div>
+
+        <!-- Cụm bên Phải: Ngắm bắn Lên / Xuống, Nhảy & Nút Bắn Tụ Lực To -->
+        <div class="touch-right-panel">
+          <div class="touch-aim-column">
+            <button type="button" id="touch-aim-up" class="t-btn t-btn-aim" aria-label="Ngắm lên">
+              <span class="t-icon">▲</span>
+              <span class="t-label">Ngắm Lên</span>
+            </button>
+            <button type="button" id="touch-aim-down" class="t-btn t-btn-aim" aria-label="Ngắm xuống">
+              <span class="t-icon">▼</span>
+              <span class="t-label">Ngắm Xuống</span>
+            </button>
+          </div>
+          <button type="button" id="touch-jump" class="t-btn t-btn-jump" aria-label="Nhảy">
+            <span class="t-icon">⤴</span>
+            <span class="t-label">Nhảy x2</span>
+          </button>
+          <button type="button" id="touch-shoot" class="t-btn t-btn-shoot" aria-label="Tụ lực và Bắn">
+            <span class="t-icon">🏹</span>
+            <span class="t-label">BẮN</span>
+            <span class="t-sublabel">Chạm & Giữ</span>
+          </button>
         </div>
       </div>
 
       <!-- Hướng dẫn điều khiển mini ghim dưới màn hình -->
       <div class="hud-bottom-controls">
         <div class="ctrl-box">
-          <strong>Điều Khiển:</strong> [A / D] Di chuyển (Tự động lật mặt) | <strong>[W] Nhảy (x2 Nhảy kép)</strong> | [S] Cúi né | <strong>[← / →] Mũi tên Trái / Phải Chỉnh góc ngắm</strong> | <strong>Giữ [SPACE] Tụ lực & Bắn</strong>
+          <strong>PC:</strong> [A / D] Di chuyển | <strong>[W] Nhảy x2</strong> | [S] Cúi né | <strong>[↑ / ↓ / ← / →] Chỉnh góc</strong> | <strong>Giữ [SPACE] Bắn</strong> • <strong>📱 Điện thoại:</strong> Dùng cụm phím ảo cảm ứng bên dưới (Bấm nút 📱 để ẩn/hiện)
         </div>
       </div>
     </div>
@@ -175,20 +218,40 @@
             <div class="map-selector-box">
               <label class="section-title-label" id="map-select-label">🗺️ CHỌN BẢN ĐỒ CHIẾN TRƯỜNG (CHỦ PHÒNG CHỌN):</label>
               <div class="map-options-grid">
+                <div class="map-card map-card-random" data-map="random">
+                  <div class="map-card-badge">🎲 ĐẶC BIỆT</div>
+                  <div class="map-card-name">Bản Đồ Ngẫu Nhiên</div>
+                  <div class="map-card-desc">Tự động quay ngẫu nhiên 1 trong 6 bản đồ mỗi trận đấu, bất ngờ kịch tính!</div>
+                </div>
                 <div class="map-card active" data-map="jungle">
-                  <div class="map-card-badge">🌳 THUNG LŨNG</div>
+                  <div class="map-card-badge">🌳 RỪNG RẬM</div>
                   <div class="map-card-name">Thung Lũng Cổ Thụ</div>
-                  <div class="map-card-desc">Sàn đất bằng phẳng vững chắc, 5 bục quan sát đối xứng, thung lũng thoáng đãng.</div>
+                  <div class="map-card-desc">Cành đại thụ vắt ngang đỉnh trời, tháp canh 3 tầng & Bệ Nấm Nhún bật cao.</div>
                 </div>
                 <div class="map-card" data-map="volcano">
-                  <div class="map-card-badge">🌋 VÙNG NÚI LỬA</div>
+                  <div class="map-card-badge">🌋 NÚI LỬA</div>
                   <div class="map-card-name">Vực Sâu Dung Nham</div>
-                  <div class="map-card-desc">Sàn đá bazan liền mạch, bục đá ziczac lơ lửng, không có hố tử thần, thử thách tính gió.</div>
+                  <div class="map-card-desc">Quần đảo đá bazan nhiều tầng nhấp nhô, cột thạch trụ chắn tên & Bệ Phun Nhiệt.</div>
                 </div>
                 <div class="map-card" data-map="icecave">
-                  <div class="map-card-badge">❄️ ĐỒI BĂNG</div>
-                  <div class="map-card-name">Đồi Tuyết Vô Tận</div>
-                  <div class="map-card-desc">Sàn tuyết vĩnh cửu bằng phẳng, các tầng băng trôi lơ lửng, bắn tầm xa cực đã.</div>
+                  <div class="map-card-badge">❄️ BĂNG TUYẾT</div>
+                  <div class="map-card-name">Đỉnh Băng Vĩnh Cửu</div>
+                  <div class="map-card-desc">Lâu đài băng dốc đứng, tảng băng trôi đa tầng & Bệ Phun Băng Tuyết cực mạnh.</div>
+                </div>
+                <div class="map-card" data-map="skyisland">
+                  <div class="map-card-badge">☁️ TRÊN MÂY</div>
+                  <div class="map-card-name">Đảo Bay Thần Thoại</div>
+                  <div class="map-card-desc">Đền thờ cổ lơ lửng trên biển mây hoàng kim, Bệ Phong Lôi bật nảy giữa các đảo.</div>
+                </div>
+                <div class="map-card" data-map="crystal">
+                  <div class="map-card-badge">💎 PHA LÊ</div>
+                  <div class="map-card-name">Động Pha Lê Huyền Bí</div>
+                  <div class="map-card-desc">Mỏ thạch anh phát sáng tím neon, giàn giáo hầm mỏ 3 tầng & Bệ Tinh Thể Năng Lượng.</div>
+                </div>
+                <div class="map-card" data-map="desert">
+                  <div class="map-card-badge">🏜️ SA MẠC</div>
+                  <div class="map-card-name">Tàn Tích Sa Mạc</div>
+                  <div class="map-card-desc">Kim tự tháp bậc thang cổ đại, cột trụ sa thạch cản gió & Bệ Nhún Cát Lốc Xoáy.</div>
                 </div>
               </div>
             </div>
