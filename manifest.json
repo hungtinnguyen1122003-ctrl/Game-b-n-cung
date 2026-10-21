@@ -1,0 +1,26 @@
+{
+  "name": "Đại Chiến Bắn Cung Chibi - Free For All",
+  "short_name": "Bắn Cung FFA",
+  "description": "Game bắn cung hỗn chiến nhiều người chơi phong cách Chibi thời gian thực qua WebRTC",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#090c13",
+  "theme_color": "#ff4757",
+  "categories": ["games", "action", "multiplayer"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

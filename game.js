@@ -1072,7 +1072,7 @@ class FloatingText {
     if (this.life <= 0) return;
     ctx.save();
     ctx.globalAlpha = Math.min(1, this.life * 1.5);
-    ctx.font = `bold ${this.fontSize}px 'Fredoka One', sans-serif`;
+    ctx.font = `bold ${this.fontSize}px 'Baloo 2', 'Nunito', sans-serif`;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#000';
     ctx.fillText(this.text, this.x + 2, this.y + 2);
@@ -1745,7 +1745,7 @@ class BlindBag {
     // Biểu tượng Dấu Hỏi Chấm Bí Ẩn ❓
     ctx.shadowBlur = 4;
     ctx.shadowColor = '#000000';
-    ctx.font = 'bold 20px "Fredoka One", sans-serif';
+    ctx.font = 'bold 20px "Baloo 2", "Nunito", sans-serif';
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -6481,6 +6481,64 @@ class GameManager {
         soundBtn.innerText = sounds.enabled ? '🔊' : '🔇';
       });
     }
+
+    // Khởi tạo giao diện Cài đặt App Mobile (PWA)
+    this.initPwaInstallUI();
+  }
+
+  initPwaInstallUI() {
+    const btnOpenInstall = document.getElementById('btn-install-app');
+    const modalInstall = document.getElementById('install-app-modal');
+    const btnCloseInstall = document.getElementById('btn-close-install-modal');
+    const btnCloseBottom = document.getElementById('btn-close-install-bottom');
+    const btnPwaDirect = document.getElementById('btn-pwa-direct-install');
+
+    if (btnOpenInstall && modalInstall) {
+      btnOpenInstall.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sounds.init();
+        modalInstall.classList.remove('hidden');
+      });
+    }
+
+    const closeModal = () => {
+      if (modalInstall) modalInstall.classList.add('hidden');
+    };
+    if (btnCloseInstall) btnCloseInstall.addEventListener('click', closeModal);
+    if (btnCloseBottom) btnCloseBottom.addEventListener('click', closeModal);
+
+    // Kích hoạt hộp thoại cài đặt trực tiếp nếu được hỗ trợ
+    if (btnPwaDirect) {
+      btnPwaDirect.addEventListener('click', () => {
+        sounds.init();
+        if (window.deferredPwaPrompt) {
+          window.deferredPwaPrompt.prompt();
+          window.deferredPwaPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult && choiceResult.outcome === 'accepted') {
+              console.log('User installed PWA');
+              closeModal();
+            }
+            window.deferredPwaPrompt = null;
+          });
+        } else {
+          alert('Để cài đặt:\n• Trên Android: Bấm menu 3 chấm (⋮) ➔ Chọn "Cài đặt ứng dụng" (hoặc "Thêm vào Màn hình chính").\n• Trên iPhone/iPad: Bấm nút Chia sẻ (📤) ➔ Chọn "Thêm vào MH chính"!');
+        }
+      });
+    }
+
+    // Chuyển đổi qua lại các Tab hướng dẫn
+    const tabBtns = document.querySelectorAll('.install-tab-btn');
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        sounds.init();
+        tabBtns.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.install-tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-tab');
+        const targetContent = document.getElementById(targetId);
+        if (targetContent) targetContent.classList.add('active');
+      });
+    });
   }
 
   populateArmorSelect(selectId, armors, defaultValue) {
@@ -6560,6 +6618,29 @@ class GameManager {
     this.renderPreview();
     this.network.updateLobbyRoomUI();
   }
+}
+
+// ============================================================================
+// PWA SERVICE WORKER & APP INSTALL PROMPT HANDLER
+// ============================================================================
+window.deferredPwaPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPwaPrompt = e;
+  const quickBox = document.getElementById('pwa-quick-install-box');
+  if (quickBox) quickBox.style.display = 'flex';
+  const installAppBtn = document.getElementById('btn-install-app');
+  if (installAppBtn) installAppBtn.classList.add('ready');
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then((reg) => {
+      console.log('PWA ServiceWorker registered with scope:', reg.scope);
+    }).catch((err) => {
+      console.warn('PWA ServiceWorker registration failed:', err);
+    });
+  });
 }
 
 window.addEventListener('DOMContentLoaded', () => {

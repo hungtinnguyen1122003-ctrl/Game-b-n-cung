@@ -7,7 +7,16 @@
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Cấu hình PWA Web App cho Điện Thoại (Android & iOS) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ff4757">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bắn Cung FFA">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
   <!-- PeerJS qua CDN theo yêu cầu (kèm dự phòng file cục bộ) -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <script>
@@ -124,7 +133,10 @@
             <h1 class="game-title">🏹 ĐẠI CHIẾN BẮN CUNG CHIBI 🎯</h1>
             <p class="game-subtitle">Hỗn Chiến Đấu Mạng Free-For-All (Tối Đa 5 Người) • WebRTC P2P (PeerJS) • Bản Đồ Đa Tầng</p>
           </div>
-          <button type="button" id="btn-lobby-fullscreen" class="btn-lobby-fs" title="Toàn màn hình / Xoay ngang">⛶ Toàn Màn Hình</button>
+          <div class="lobby-header-actions">
+            <button type="button" id="btn-install-app" class="btn-lobby-app" title="Cài đặt App vào điện thoại">📲 Cài App</button>
+            <button type="button" id="btn-lobby-fullscreen" class="btn-lobby-fs" title="Toàn màn hình / Xoay ngang">⛶ Toàn Màn Hình</button>
+          </div>
         </header>
 
         <!-- 1. KHU VỰC KẾT NỐI PHÒNG (ROOM CONNECTION) -->
@@ -405,6 +417,75 @@
         <button type="button" id="btn-test-metered" class="btn-secondary">🔍 Kiểm Tra Kết Nối</button>
         <button type="button" id="btn-clear-metered" class="btn-sm-action btn-danger">Xóa Cấu Hình</button>
         <button type="button" id="btn-save-metered" class="btn-primary">💾 Lưu Cấu Hình</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL HƯỚNG DẪN TẢI VÀ CÀI ĐẶT APP CHO ĐIỆN THOẠI -->
+  <div id="install-app-modal" class="modal-overlay hidden">
+    <div class="modal-card install-modal-card">
+      <div class="install-modal-header">
+        <div class="install-modal-title">
+          <span class="icon">📲</span>
+          <h3>CÀI ĐẶT APP BẮN CUNG VÀO ĐIỆN THOẠI</h3>
+        </div>
+        <button type="button" id="btn-close-install-modal" class="btn-modal-close" aria-label="Đóng">&times;</button>
+      </div>
+
+      <div class="install-modal-body">
+        <p class="install-intro">
+          Game hỗ trợ chuẩn <strong>Progressive Web App (PWA)</strong>, cho phép cài đặt trực tiếp lên màn hình điện thoại như ứng dụng tải từ CH Play / App Store (mở toàn màn hình, tự động khóa ngang, không có thanh địa chỉ web, chơi siêu mượt!).
+        </p>
+
+        <!-- Nút Cài đặt nhanh nếu trình duyệt hỗ trợ (Android) -->
+        <div id="pwa-quick-install-box" class="pwa-quick-install-box">
+          <button type="button" id="btn-pwa-direct-install" class="btn-pwa-big-install">
+            ⚡ BẤM ĐÂY ĐỂ CÀI ĐẶT NGAY (1 CHẠM)
+          </button>
+        </div>
+
+        <div class="install-tabs-nav">
+          <button type="button" class="install-tab-btn active" data-tab="tab-android">🤖 Android (Chrome / Cốc Cốc)</button>
+          <button type="button" class="install-tab-btn" data-tab="tab-ios">🍎 iPhone / iPad (Safari)</button>
+          <button type="button" class="install-tab-btn" data-tab="tab-apk">📦 Xuất File APK</button>
+        </div>
+
+        <!-- Tab Android -->
+        <div class="install-tab-content active" id="tab-android">
+          <ol class="install-steps">
+            <li>Mở link game bằng trình duyệt <strong>Google Chrome</strong> hoặc <strong>Cốc Cốc</strong> trên điện thoại Android.</li>
+            <li>Bấm vào biểu tượng dấu <strong>3 chấm dọc (⋮)</strong> ở góc trên bên phải màn hình.</li>
+            <li>Chọn <strong>"Cài đặt ứng dụng"</strong> (hoặc <strong>"Thêm vào Màn hình chính"</strong>).</li>
+            <li>Bấm <strong>"Cài đặt"</strong> xác nhận. Biểu tượng game sẽ lập tức xuất hiện trên màn hình điện thoại của bạn!</li>
+          </ol>
+        </div>
+
+        <!-- Tab iOS -->
+        <div class="install-tab-content" id="tab-ios">
+          <ol class="install-steps">
+            <li>Mở link game bằng trình duyệt <strong>Safari</strong> trên iPhone hoặc iPad.</li>
+            <li>Bấm vào nút <strong>Chia sẻ (Share)</strong> biểu tượng ô vuông có mũi tên trỏ lên (<strong>📤</strong>) ở thanh công cụ dưới.</li>
+            <li>Cuộn xuống danh sách tùy chọn và chọn <strong>"Thêm vào MH chính" (Add to Home Screen ➕)</strong>.</li>
+            <li>Bấm nút <strong>"Thêm" (Add)</strong> ở góc trên bên phải màn hình để hoàn tất!</li>
+          </ol>
+        </div>
+
+        <!-- Tab APK -->
+        <div class="install-tab-content" id="tab-apk">
+          <div class="apk-info-box">
+            <p>Nếu bạn muốn xuất thành file <strong>.APK</strong> để gửi qua Zalo/Telegram hoặc cài đặt trực tiếp:</p>
+            <ol class="install-steps">
+              <li>Truy cập công cụ chính thức của Microsoft: <a href="https://www.pwabuilder.com/" target="_blank" rel="noreferrer"><strong>PWABuilder.com</strong></a></li>
+              <li>Dán link web game của bạn vào ô và bấm <strong>Start</strong>.</li>
+              <li>Bấm <strong>"Package for Stores" ➔ Android ➔ "Download Package (APK)"</strong>.</li>
+              <li>Bạn sẽ nhận được file APK sẵn sàng cài đặt trên mọi điện thoại Android!</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div class="install-modal-footer">
+        <button type="button" id="btn-close-install-bottom" class="btn-secondary">Đã Hiểu</button>
       </div>
     </div>
   </div>

@@ -14,8 +14,8 @@
   --bg-panel: rgba(26, 34, 44, 0.92);
   --bg-panel-border: rgba(255, 255, 255, 0.18);
   --text-light: #f1f2f6;
-  --font-display: 'Fredoka One', cursive, sans-serif;
-  --font-main: 'Nunito', sans-serif;
+  --font-display: 'Baloo 2', 'Nunito', cursive, sans-serif;
+  --font-main: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 * {
@@ -436,6 +436,41 @@ body {
 
 .lobby-header-text {
   flex: 1;
+}
+
+.lobby-header-actions {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-lobby-app {
+  background: linear-gradient(135deg, rgba(46, 213, 115, 0.25), rgba(0, 210, 211, 0.25));
+  color: #2ed573;
+  border: 1.5px solid rgba(46, 213, 115, 0.6);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  animation: appPillPulse 2s infinite alternate;
+}
+
+@keyframes appPillPulse {
+  0% { box-shadow: 0 0 6px rgba(46, 213, 115, 0.3); }
+  100% { box-shadow: 0 0 16px rgba(46, 213, 115, 0.7); border-color: #2ed573; }
+}
+
+.btn-lobby-app:hover {
+  background: #2ed573;
+  color: #fff;
+  transform: translateY(-1px);
 }
 
 .btn-lobby-fs {
@@ -2473,4 +2508,140 @@ body {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ============================================================================
+   INSTALL APP MODAL & TABS (PWA)
+   ============================================================================ */
+.install-modal-card {
+  max-width: 580px;
+  width: 92%;
+  background: #141b2d;
+  border: 1.5px solid rgba(46, 213, 115, 0.5);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), 0 0 30px rgba(46, 213, 115, 0.25);
+  color: #f1f2f6;
+  animation: modalScaleUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.install-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+}
+
+.install-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.install-modal-title h3 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: #2ed573;
+  margin: 0;
+}
+
+.install-intro {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #c8d6e5;
+  margin-bottom: 14px;
+}
+
+.pwa-quick-install-box {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-pwa-big-install {
+  width: 100%;
+  background: linear-gradient(135deg, #2ed573, #1e90ff);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 13px 20px;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(46, 213, 115, 0.45);
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-pwa-big-install:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(46, 213, 115, 0.65);
+}
+
+.install-tabs-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.install-tab-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #c8d6e5;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.install-tab-btn.active {
+  background: #1e90ff;
+  color: #fff;
+  border-color: #70a1ff;
+  box-shadow: 0 0 12px rgba(30, 144, 255, 0.5);
+}
+
+.install-tab-content {
+  display: none;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: #dfe4ea;
+}
+
+.install-tab-content.active {
+  display: block;
+  animation: fadeInDown 0.2s ease;
+}
+
+.install-steps {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.install-steps li strong {
+  color: #ffd32a;
+}
+
+.apk-info-box a {
+  color: #48dbfb;
+  text-decoration: underline;
+}
+
+.install-modal-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
 
