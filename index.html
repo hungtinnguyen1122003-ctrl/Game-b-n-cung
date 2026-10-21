@@ -17,6 +17,23 @@
   </script>
 </head>
 <body>
+  <!-- Lớp cảnh báo xoay ngang màn hình cho điện thoại (Rotate Device Notice) -->
+  <div id="rotate-device-overlay" class="rotate-overlay">
+    <div class="rotate-box">
+      <div class="rotate-phone-anim">
+        <div class="phone-shape">
+          <div class="phone-screen">🏹</div>
+        </div>
+      </div>
+      <h3 class="rotate-title">VUI LÒNG XOAY NGANG ĐIỆN THOẠI</h3>
+      <p class="rotate-desc">Đại Chiến Bắn Cung Chibi chuẩn tỷ lệ 16:9 màn hình ngang. Hãy xoay ngang thiết bị để có tầm nhìn bao quát và điều khiển 2 ngón tay cái mượt mà nhất!</p>
+      <div class="rotate-actions">
+        <button type="button" id="btn-rotate-fullscreen" class="btn-rotate-fs">⛶ Vào Toàn Màn Hình Ngang</button>
+        <button type="button" id="btn-rotate-dismiss" class="btn-rotate-close">Tiếp tục ở màn dọc</button>
+      </div>
+    </div>
+  </div>
+
   <div id="game-container">
     <!-- Canvas Trận đấu -->
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
@@ -42,6 +59,7 @@
           <div class="hud-buttons-row">
             <button id="btn-sound-toggle" class="btn-icon" title="Bật/Tắt âm thanh">🔊</button>
             <button id="btn-touch-toggle" class="btn-icon" title="Bật/Tắt phím ảo điện thoại">📱</button>
+            <button id="btn-fullscreen-toggle" class="btn-icon" title="Toàn màn hình / Xoay ngang">⛶</button>
             <button id="btn-back-lobby" class="btn-icon btn-danger" title="Về sảnh">🏳️ Về Sảnh</button>
           </div>
         </div>
@@ -102,8 +120,11 @@
       <div class="lobby-backdrop"></div>
       <div class="lobby-content">
         <header class="lobby-header">
-          <h1 class="game-title">🏹 ĐẠI CHIẾN BẮN CUNG CHIBI 🎯</h1>
-          <p class="game-subtitle">Hỗn Chiến Đấu Mạng Free-For-All (Tối Đa 5 Người) • WebRTC P2P (PeerJS) • Bản Đồ Đa Tầng</p>
+          <div class="lobby-header-text">
+            <h1 class="game-title">🏹 ĐẠI CHIẾN BẮN CUNG CHIBI 🎯</h1>
+            <p class="game-subtitle">Hỗn Chiến Đấu Mạng Free-For-All (Tối Đa 5 Người) • WebRTC P2P (PeerJS) • Bản Đồ Đa Tầng</p>
+          </div>
+          <button type="button" id="btn-lobby-fullscreen" class="btn-lobby-fs" title="Toàn màn hình / Xoay ngang">⛶ Toàn Màn Hình</button>
         </header>
 
         <!-- 1. KHU VỰC KẾT NỐI PHÒNG (ROOM CONNECTION) -->

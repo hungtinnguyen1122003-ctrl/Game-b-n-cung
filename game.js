@@ -4696,6 +4696,95 @@ class InputHandler {
       btnShoot.addEventListener('mousedown', startCharge);
       btnShoot.addEventListener('mouseup', releaseCharge);
     }
+
+    // Kích hoạt hỗ trợ Toàn Màn Hình & Xoay Ngang Màn Hình cho Điện Thoại
+    this.initMobileLandscapeSupport();
+  }
+
+  initMobileLandscapeSupport() {
+    const toggleFullscreen = () => {
+      sounds.init();
+      const docEl = document.documentElement;
+      const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+      
+      if (!isFullscreen) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+        if (req) {
+          req.call(docEl).then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+              screen.orientation.lock('landscape').catch(() => {});
+            }
+          }).catch(err => {
+            console.warn('Fullscreen request rejected:', err);
+          });
+        }
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen;
+        if (exit) {
+          exit.call(document).catch(err => console.warn('Exit fullscreen error:', err));
+        }
+      }
+    };
+
+    // Nút Toàn Màn Hình trong HUD Trận Đấu
+    const btnFsCombat = document.getElementById('btn-fullscreen-toggle');
+    if (btnFsCombat) {
+      btnFsCombat.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFullscreen();
+      });
+    }
+
+    // Nút Toàn Màn Hình trong Lobby
+    const btnFsLobby = document.getElementById('btn-lobby-fullscreen');
+    if (btnFsLobby) {
+      btnFsLobby.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFullscreen();
+      });
+    }
+
+    // Nút Bật Toàn Màn Hình trên Overlay Xoay Điện Thoại
+    const btnFsRotate = document.getElementById('btn-rotate-fullscreen');
+    if (btnFsRotate) {
+      btnFsRotate.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFullscreen();
+        const overlay = document.getElementById('rotate-device-overlay');
+        if (overlay) overlay.classList.add('dismissed');
+      });
+    }
+
+    // Nút Bỏ qua cảnh báo xoay dọc
+    const btnDismissRotate = document.getElementById('btn-rotate-dismiss');
+    if (btnDismissRotate) {
+      btnDismissRotate.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const overlay = document.getElementById('rotate-device-overlay');
+        if (overlay) overlay.classList.add('dismissed');
+      });
+    }
+
+    // Cập nhật biểu tượng khi trạng thái Toàn màn hình thay đổi
+    const updateFsIcons = () => {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (btnFsCombat) btnFsCombat.innerText = isFs ? '🗗' : '⛶';
+      if (btnFsLobby) btnFsLobby.innerText = isFs ? '🗗 Thu Nhỏ' : '⛶ Toàn Màn Hình';
+    };
+    document.addEventListener('fullscreenchange', updateFsIcons);
+    document.addEventListener('webkitfullscreenchange', updateFsIcons);
+
+    // Tự động đóng overlay khi đã ở màn hình ngang
+    const checkOrientation = () => {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      const overlay = document.getElementById('rotate-device-overlay');
+      if (overlay && isLandscape) {
+        overlay.classList.add('dismissed');
+      }
+    };
+
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
   }
 }
 
